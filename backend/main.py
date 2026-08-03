@@ -1,0 +1,25 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from database import Base, engine
+import models  
+from api import router
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Sherpa — SME IPO Drafting Copilot API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(router)
+
+
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "sherpa-backend"}
