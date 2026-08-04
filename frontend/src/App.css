@@ -270,3 +270,130 @@ body {
   border-left: 2px solid var(--border-strong);
   padding-left: 12px;
 }
+
+/* ---------- Step 6 — company id bar ---------- */
+
+.company-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.company-bar label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.company-bar input {
+  flex: 1 1 260px;
+  min-width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.company-bar-hint {
+  flex-basis: 100%;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.company-bar-hint code {
+  color: var(--text-muted);
+}
+
+/* ---------- Step 6 — financial document upload ---------- */
+
+.financial-upload {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.upload-title {
+  font-size: 16px;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.upload-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.dropzone {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--amber);
+}
+
+.dropzone.dragging {
+  border-color: var(--teal);
+  background: var(--teal-dim);
+  color: var(--text);
+}
+
+.dropzone.busy {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+  cursor: progress;
+}
+
+.dropzone-link {
+  color: var(--amber);
+  text-decoration: underline;
+}
+
+.dropzone-input {
+  display: none;
+}
+
+.upload-result {
+  margin-top: 16px;
+}
+
+.line-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+.line-items-table th,
+.line-items-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.line-items-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

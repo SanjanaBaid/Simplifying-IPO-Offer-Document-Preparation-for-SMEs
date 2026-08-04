@@ -1,18 +1,20 @@
 import { useMemo, useState } from "react";
 import PageShell from "../components/PageShell";
+import FinancialUpload from "../components/FinancialUpload";
+import apiClient from "../api/client";
+import useCompanyId from "../hooks/useCompanyId";
 import { SECTIONS, ALL_FIELDS } from "../scheduleViFields";
 
-// Guided Intake — Step 4.
+// Guided Intake — Step 4, wired live in Step 6.
 //
 // Renders the Schedule VI field catalogue as a plain-language questionnaire,
 // one section ("camp leg") at a time. Every question maps 1:1 to a
 // ScheduleVIField row via field_key, and validation mirrors the Pydantic
-// validators Person A will wire up server-side in Step 5.
+// validators Person A defined server-side in Step 5.
 //
-// This step is intentionally not connected to the API yet — that's Step 6
-// (axios wiring to POST /intake). The "Review & submit" screen instead shows
-// exactly the payload shape that call will send, so both sides can confirm
-// the contract before the wire-up.
+// Step 6 replaces the mock console.log submit with a real
+// axios.post("/intake", ...) call, and adds the drag-and-drop financial
+// upload once the intake is saved.
 
 function fieldError(field, value) {
   if (field.optional && (value === undefined || value === "" || value === null)) {
@@ -67,10 +69,13 @@ function FieldInput({ field, value, error, onChange }) {
 }
 
 export default function Intake() {
+  const [companyId, setCompanyId] = useCompanyId();
   const [values, setValues] = useState({});
   const [touched, setTouched] = useState({});
   const [step, setStep] = useState(0); // index into SECTIONS, SECTIONS.length === review screen
   const [submitted, setSubmitted] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState("idle"); // idle | saving | error
+  const [submitError, setSubmitError] = useState("");
 
   const isReview = step === SECTIONS.length;
   const currentSection = SECTIONS[step];
@@ -129,14 +134,36 @@ export default function Intake() {
     response_text: values[f.field_key] ?? "",
   }));
 
-  function handleSubmit() {
+  async function handleSubmit() {
     ALL_FIELDS.forEach((f) => (touched[f.field_key] = true));
     setTouched({ ...touched });
     if (!overallComplete) return;
-    setSubmitted(true);
-    // Step 6 will replace this with:
-    //   axios.post("/intake", { company_id, responses: payloadPreview })
-    console.log("Intake payload (mock — wired in Step 6):", payloadPreview);
+
+    if (!companyId) {
+      setSubmitStatus("error");
+      setSubmitError("Enter a company ID above before submitting.");
+      return;
+    }
+
+    setSubmitStatus("saving");
+    setSubmitError("");
+    try {
+      await apiClient.post("/intake", {
+        company_id: companyId,
+        responses: payloadPreview.map(({ field_key, response_text }) => ({
+          field_key,
+          response_text,
+        })),
+      });
+      setSubmitStatus("idle");
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitStatus("error");
+      setSubmitError(
+        err.response?.data?.detail ||
+          "Couldn't save the intake — confirm the backend is running and reachable."
+      );
+    }
   }
 
   const answeredCount = ALL_FIELDS.filter((f) => !fieldError(f, values[f.field_key])).length;
@@ -147,6 +174,22 @@ export default function Intake() {
       title="Guided Intake"
       sub="A plain-language questionnaire that maps every answer 1:1 to a Schedule VI data field, so promoters never see regulatory language directly."
     >
+      <div className="company-bar">
+        <label htmlFor="company-id">Company ID</label>
+        <input
+          id="company-id"
+          type="text"
+          className="intake-input"
+          placeholder="Paste the company_id to save this intake against"
+          value={companyId}
+          onChange={(e) => setCompanyId(e.target.value.trim())}
+        />
+        <span className="company-bar-hint">
+          Temporary until the company picker ships — copy this from{" "}
+          <code>POST /companies</code> or your seeded dev company.
+        </span>
+      </div>
+
       <div className="intake-progress">
         {SECTIONS.map((s, i) => (
           <button
@@ -231,6 +274,8 @@ export default function Intake() {
             ))}
           </div>
 
+          {submitStatus === "error" && <p className="field-error">{submitError}</p>}
+
           <div className="intake-nav">
             <button type="button" className="btn-ghost" onClick={goBack}>
               Back
@@ -239,9 +284,9 @@ export default function Intake() {
               type="button"
               className="btn-primary"
               onClick={handleSubmit}
-              disabled={!overallComplete}
+              disabled={!overallComplete || submitStatus === "saving"}
             >
-              Submit intake
+              {submitStatus === "saving" ? "Saving…" : "Submit intake"}
             </button>
           </div>
         </div>
@@ -250,15 +295,17 @@ export default function Intake() {
       {submitted && (
         <div className="intake-section">
           <div className="mock-card submitted-card">
-            <span className="status clear">Saved locally</span>
+            <span className="status clear">Saved to backend</span>
             <h3>Intake captured</h3>
             <p>
-              All {ALL_FIELDS.length} answers validated and are mapped to their Schedule VI
-              field keys below. Step 5 adds <code>POST /intake</code>, and Step 6 swaps the
-              button above for a real <code>axios</code> call — no changes needed here.
+              All {ALL_FIELDS.length} answers were saved against company{" "}
+              <code>{companyId}</code>, mapped to their Schedule VI field keys below.
             </p>
           </div>
           <pre className="payload-preview">{JSON.stringify(payloadPreview, null, 2)}</pre>
+
+          <FinancialUpload companyId={companyId} />
+
           <div className="intake-nav">
             <button type="button" className="btn-ghost" onClick={() => setSubmitted(false)}>
               Back to review

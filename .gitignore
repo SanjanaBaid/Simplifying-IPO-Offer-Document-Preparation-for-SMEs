@@ -1,6 +1,32 @@
+# Node.js
 node_modules/
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
 __pycache__/
-*.db
-chroma_store/
+*.py[cod]
+
+# Environment variables
 .env
-.dist/
+.env.*
+
+# Database files
+*.db
+
+# ChromaDB
+chroma_store/
+
+# Build directories
+dist/
+build/
+
+# VS Code (optional)
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
