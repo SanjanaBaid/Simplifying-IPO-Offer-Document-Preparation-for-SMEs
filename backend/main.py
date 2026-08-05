@@ -1,9 +1,14 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine
 import models  
 from api import router
+from drafting import router as drafting_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -18,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(drafting_router)
 
 
 @app.get("/")
