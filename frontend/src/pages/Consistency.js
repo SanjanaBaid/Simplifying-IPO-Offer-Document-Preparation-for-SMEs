@@ -1,32 +1,217 @@
+import { useState } from "react";
 import PageShell from "../components/PageShell";
+import apiClient from "../api/client";
+import useCompanyId from "../hooks/useCompanyId";
 
-const CHECKS = [
-  { status: "clear", title: "Revenue figures", desc: "Matches across MD&A, financials, and summary tables." },
-  { status: "flag", title: "Promoter shareholding %", desc: "12.4% in intake vs. 12.9% in the capital structure section." },
-  { status: "clear", title: "Registered office address", desc: "Consistent across cover page, definitions, and annexures." },
-  { status: "flag", title: "Objects of the issue amount", desc: "₹ figure in cover page doesn't sum to the use-of-proceeds table." },
-  { status: "clear", title: "Related party names", desc: "Consistent between disclosures and financial statement notes." },
-];
+const CLAIM_STATUS_LABEL = {
+  match: "Consistent",
+  mismatch: "Mismatch",
+  unmatched: "No financial match",
+};
+
+const CLAIM_STATUS_CLASS = {
+  match: "clear",
+  mismatch: "flag",
+  unmatched: "pending",
+};
 
 export default function Consistency() {
+  const [companyId, setCompanyId] = useCompanyId();
+  const [threshold, setThreshold] = useState(1.0);
+  const [result, setResult] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleCheck() {
+    if (!companyId) {
+      setErrorMsg("Enter a company ID above before running the checker.");
+      return;
+    }
+    setChecking(true);
+    setErrorMsg("");
+    try {
+      const { data } = await apiClient.post(
+        `/consistency/check?company_id=${encodeURIComponent(companyId)}&materiality_threshold_pct=${threshold}`
+      );
+      setResult(data);
+    } catch (err) {
+      setErrorMsg(
+        err.response?.data?.detail ||
+          "Couldn't run the consistency check — confirm drafted sections and uploaded financials exist for this company."
+      );
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  const flaggedClaims = result?.numeric_claims?.filter((c) => c.status === "mismatch") || [];
+  const otherClaims = result?.numeric_claims?.filter((c) => c.status !== "mismatch") || [];
+
   return (
     <PageShell
       eyebrow="Module 03 — Camp III"
       title="Consistency Checker"
-      sub="Cross-references figures, names, and dates across every drafted section, flagging mismatches before they reach the auditor."
+      sub="Cross-references figures drafted in the narrative against every extracted financial line item, flagging mismatches before they reach the auditor."
     >
-      <div className="mock-grid">
-        {CHECKS.map((c) => (
-          <div className="mock-card" key={c.title}>
-            <span className={`status ${c.status}`}>{c.status === "clear" ? "Consistent" : "Mismatch"}</span>
-            <h3>{c.title}</h3>
-            <p>{c.desc}</p>
-          </div>
-        ))}
+      <div className="company-bar">
+        <label htmlFor="company-id">Company ID</label>
+        <input
+          id="company-id"
+          type="text"
+          className="intake-input"
+          placeholder="Paste the company_id whose drafts you want checked"
+          value={companyId}
+          onChange={(e) => setCompanyId(e.target.value.trim())}
+        />
+        <span className="company-bar-hint">
+          Checks the latest version of every drafted section against this company's uploaded
+          financials.
+        </span>
       </div>
-      <p className="placeholder-note">
-        Mock data — real checks will diff extracted financial line items against drafted section text.
-      </p>
+
+      <div className="company-bar">
+        <label htmlFor="threshold">Materiality threshold (%)</label>
+        <input
+          id="threshold"
+          type="number"
+          min="0"
+          step="0.1"
+          className="intake-input"
+          style={{ maxWidth: "120px" }}
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value === "" ? "" : Number(e.target.value))}
+        />
+        <span className="company-bar-hint">
+          Variances at or below this % are treated as rounding noise, not mismatches.
+        </span>
+      </div>
+
+      {errorMsg && <p className="field-error">{errorMsg}</p>}
+
+      <button type="button" className="btn-primary" onClick={handleCheck} disabled={checking}>
+        {checking ? "Checking…" : result ? "Re-run consistency check" : "Run consistency check"}
+      </button>
+
+      {result && (
+        <>
+          <p className="placeholder-note" style={{ marginTop: "1rem" }}>
+            {result.flagged_count} issue{result.flagged_count === 1 ? "" : "s"} flagged across{" "}
+            {result.sections_checked.join(", ")} · threshold {result.materiality_threshold_pct}%
+          </p>
+
+          {flaggedClaims.length > 0 && (
+            <div className="mock-card" style={{ marginBottom: "1.5rem" }}>
+              <span className="status flag">
+                {flaggedClaims.length} number{flaggedClaims.length === 1 ? "" : "s"} don't tie out
+              </span>
+              <h3>Numeric mismatches</h3>
+              <div className="review-grid">
+                {flaggedClaims.map((claim, i) => (
+                  <div className="review-card" key={i}>
+                    <div className="review-card-head">
+                      <h3>{claim.claimed_label}</h3>
+                      <span className="status flag">Mismatch</span>
+                    </div>
+                    {claim.schedule_vi_clause && (
+                      <p className="clause-tag">{claim.schedule_vi_clause}</p>
+                    )}
+                    <div className="review-row">
+                      <span className="review-clause">Drafted as</span>
+                      <span className="review-value">
+                        {claim.claimed_value}
+                        {claim.is_percent ? "%" : ""} ({claim.draft_section} v{claim.draft_version})
+                      </span>
+                    </div>
+                    <div className="review-row">
+                      <span className="review-clause">Financials say</span>
+                      <span className="review-value">
+                        {claim.matched_line_item_value} — {claim.matched_line_item_label}
+                        {claim.matched_line_item_period ? ` (${claim.matched_line_item_period})` : ""}
+                      </span>
+                    </div>
+                    <div className="review-row">
+                      <span className="review-clause">Variance</span>
+                      <span className="review-value">{claim.variance_pct}%</span>
+                    </div>
+                    <p className="field-helper">"{claim.snippet}"</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(result.crossfoot_checks.length > 0 || result.ratio_checks.length > 0) && (
+            <div className="mock-grid" style={{ marginBottom: "1.5rem" }}>
+              {result.crossfoot_checks.map((c, i) => (
+                <div className="mock-card" key={`cf-${i}`}>
+                  <span className={`status ${c.flagged ? "flag" : "clear"}`}>
+                    {c.flagged ? "Doesn't foot" : "Foots correctly"}
+                  </span>
+                  <h3>{c.total_label}</h3>
+                  <p>
+                    Reported {c.reported_total} vs. computed sum {c.computed_sum} of{" "}
+                    {c.component_labels.join(", ")} — {c.variance_pct}% variance ({c.period}).
+                  </p>
+                </div>
+              ))}
+              {result.ratio_checks.map((r, i) => (
+                <div className="mock-card" key={`ratio-${i}`}>
+                  <span className={`status ${r.flagged ? "flag" : "clear"}`}>
+                    {r.flagged ? "Failed" : "Passed"}
+                  </span>
+                  <h3>{r.check_name}</h3>
+                  <p>{r.detail}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {otherClaims.length > 0 && (
+            <details>
+              <summary style={{ cursor: "pointer" }}>
+                {otherClaims.length} other drafted figure{otherClaims.length === 1 ? "" : "s"} checked
+              </summary>
+              <div className="review-grid" style={{ marginTop: "0.75rem" }}>
+                {otherClaims.map((claim, i) => (
+                  <div className="review-card" key={i}>
+                    <div className="review-card-head">
+                      <h3>{claim.claimed_label}</h3>
+                      <span className={`status ${CLAIM_STATUS_CLASS[claim.status]}`}>
+                        {CLAIM_STATUS_LABEL[claim.status]}
+                      </span>
+                    </div>
+                    {claim.schedule_vi_clause && (
+                      <p className="clause-tag">{claim.schedule_vi_clause}</p>
+                    )}
+                    <div className="review-row">
+                      <span className="review-clause">Drafted as</span>
+                      <span className="review-value">
+                        {claim.claimed_value}
+                        {claim.is_percent ? "%" : ""}
+                      </span>
+                    </div>
+                    {claim.matched_line_item_label && (
+                      <div className="review-row">
+                        <span className="review-clause">Financials say</span>
+                        <span className="review-value">
+                          {claim.matched_line_item_value} — {claim.matched_line_item_label}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </>
+      )}
+
+      {!result && !checking && (
+        <p className="placeholder-note">
+          Run the checker to diff drafted narrative figures against extracted financial line
+          items — nothing is checked until you press the button above.
+        </p>
+      )}
     </PageShell>
   );
 }
