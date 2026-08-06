@@ -9,6 +9,7 @@ from database import Base, engine
 import models  
 from api import router
 from drafting import router as drafting_router
+from classifier import router as classifier_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,7 +25,7 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(drafting_router)
-
+app.include_router(classifier_router)
 
 @app.get("/")
 def root():

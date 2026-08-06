@@ -11,9 +11,12 @@ const SECTIONS = [
 
 export default function Drafting() {
   const [companyId, setCompanyId] = useCompanyId();
-  const [drafts, setDrafts] = useState({}); // section key -> response object
-  const [generating, setGenerating] = useState(null); // section key in flight
+  const [drafts, setDrafts] = useState({}); 
+  const [generating, setGenerating] = useState(null); 
   const [errorMsg, setErrorMsg] = useState("");
+  const [classification, setClassification] = useState(null); 
+  const [classifying, setClassifying] = useState(false);
+  const [classifyError, setClassifyError] = useState("");
 
   async function handleGenerate(section) {
     if (!companyId) {
@@ -29,6 +32,9 @@ export default function Drafting() {
         section: section.key,
       });
       setDrafts((prev) => ({ ...prev, [section.key]: data }));
+      if (section.key === "risk_factors") {
+        setClassification(null); 
+      }
     } catch (err) {
       setErrorMsg(
         err.response?.data?.detail ||
@@ -36,6 +42,28 @@ export default function Drafting() {
       );
     } finally {
       setGenerating(null);
+    }
+  }
+
+  async function handleClassify() {
+    if (!companyId) {
+      setClassifyError("Enter a company ID above before classifying.");
+      return;
+    }
+    setClassifying(true);
+    setClassifyError("");
+    try {
+      const { data } = await apiClient.post(
+        `/classifier/classify-risks?company_id=${encodeURIComponent(companyId)}`
+      );
+      setClassification(data);
+    } catch (err) {
+      setClassifyError(
+        err.response?.data?.detail ||
+          "Couldn't classify risk factors — confirm a Risk Factors draft exists for this company."
+      );
+    } finally {
+      setClassifying(false);
     }
   }
 
@@ -105,6 +133,62 @@ export default function Drafting() {
                       </ul>
                     </details>
                   )}
+
+                  {section.key === "risk_factors" && (
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={handleClassify}
+                        disabled={classifying}
+                      >
+                        {classifying
+                          ? "Classifying…"
+                          : classification
+                          ? "Re-classify risk factors"
+                          : "Classify risk factors"}
+                      </button>
+                      {classifyError && <p className="field-error">{classifyError}</p>}
+                    </div>
+                  )}
+
+                  {section.key === "risk_factors" && classification && (
+                    <div style={{ marginTop: "1rem" }}>
+                      <p className="pane-eyebrow" style={{ marginBottom: "0.5rem" }}>
+                        Classified · v{classification.version} ·{" "}
+                        {classification.flagged_count} of {classification.items.length} flagged
+                      </p>
+                      {classification.items.map((item, i) => (
+                        <div
+                          key={i}
+                          className="review-card"
+                          style={{ marginBottom: "0.5rem" }}
+                        >
+                          <div className="review-card-head">
+                            <span
+                              className={`status ${
+                                item.needs_promoter_input ? "flag" : "clear"
+                              }`}
+                            >
+                              {item.needs_promoter_input
+                                ? "Needs promoter input"
+                                : "Specific"}
+                            </span>
+                            <span className="review-clause">
+                              Specificity {item.specificity_score}
+                              {!item.scored_with_llm && " (heuristic)"}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0 }}>{item.text}</p>
+                          {item.matched_phrases.length > 0 && (
+                            <p className="field-helper">
+                              Boilerplate phrases: {item.matched_phrases.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <p>Not generated yet — complete Guided Intake first, then generate.</p>
@@ -132,6 +216,29 @@ export default function Drafting() {
         looks thin, check the "Needs promoter input" line — it means the underlying intake
         answer was blank, not that the engine failed.
       </p>
+
+      {classification && classification.flagged_count > 0 && (
+        <div className="mock-card" style={{ marginTop: "1.5rem" }}>
+          <span className="status flag">
+            {classification.flagged_count} item
+            {classification.flagged_count === 1 ? "" : "s"} need promoter input
+          </span>
+          <h3>Needs promoter input queue</h3>
+          <p>
+            These risk factors read as generic or boilerplate — go back to Intake and add
+            specifics (numbers, named suppliers/customers, dates) for each.
+          </p>
+          <ul>
+            {classification.items
+              .filter((item) => item.needs_promoter_input)
+              .map((item, i) => (
+                <li key={i} style={{ marginBottom: "0.5rem" }}>
+                  {item.text}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
     </PageShell>
   );
 }
