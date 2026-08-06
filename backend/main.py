@@ -11,6 +11,8 @@ from api import router
 from drafting import router as drafting_router
 from classifier import router as classifier_router
 from consistency import router as consistency_router
+from handoff import router as handoff_router
+from audit import router as audit_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,6 +30,8 @@ app.include_router(router)
 app.include_router(drafting_router)
 app.include_router(classifier_router)
 app.include_router(consistency_router)
+app.include_router(handoff_router)
+app.include_router(audit_router)
 
 @app.get("/")
 def root():
