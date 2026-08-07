@@ -33,6 +33,18 @@ class Promoter(Base):
     companies = relationship("Company", back_populates="promoter")
 
 
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    token = Column(String, unique=True, nullable=False, index=True)
+    promoter_id = Column(String, ForeignKey("promoters.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+
+    promoter = relationship("Promoter")
+
+
 class Company(Base):
     __tablename__ = "companies"
 

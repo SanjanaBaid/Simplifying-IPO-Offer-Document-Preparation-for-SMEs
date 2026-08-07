@@ -7,7 +7,7 @@ const STATUS_LABEL = { clear: "Satisfied", pending: "Partial", flag: "Gap found"
 const PRIORITY_STATUS_CLASS = { HIGH: "flag", MEDIUM: "pending", LOW: "clear" };
 
 export default function Audit() {
-  const [companyId, setCompanyId] = useCompanyId();
+  const [companyId] = useCompanyId();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -44,22 +44,6 @@ export default function Audit() {
       title="Risk & Completeness Auditor"
       sub="Runs the near-final draft against ICDR Schedule VI and SME Chapter IX requirements, surfacing gaps before merchant banker review."
     >
-      <div className="company-bar">
-        <label htmlFor="company-id">Company ID</label>
-        <input
-          id="company-id"
-          type="text"
-          className="intake-input"
-          placeholder="Paste the company_id to audit"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value.trim())}
-        />
-        <span className="company-bar-hint">
-          Rolls up Intake, Drafting, Consistency, and Risk Audit — plus an explicit Schedule VI
-          clause-citation check the handoff scorecard doesn't do.
-        </span>
-      </div>
-
       {errorMsg && <p className="field-error">{errorMsg}</p>}
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>

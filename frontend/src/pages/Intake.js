@@ -5,16 +5,7 @@ import apiClient from "../api/client";
 import useCompanyId from "../hooks/useCompanyId";
 import { SECTIONS, ALL_FIELDS } from "../scheduleViFields";
 
-// Guided Intake — Step 4, wired live in Step 6.
-//
-// Renders the Schedule VI field catalogue as a plain-language questionnaire,
-// one section ("camp leg") at a time. Every question maps 1:1 to a
-// ScheduleVIField row via field_key, and validation mirrors the Pydantic
-// validators Person A defined server-side in Step 5.
-//
-// Step 6 replaces the mock console.log submit with a real
-// axios.post("/intake", ...) call, and adds the drag-and-drop financial
-// upload once the intake is saved.
+
 
 function fieldError(field, value) {
   if (field.optional && (value === undefined || value === "" || value === null)) {
@@ -69,7 +60,7 @@ function FieldInput({ field, value, error, onChange }) {
 }
 
 export default function Intake() {
-  const [companyId, setCompanyId] = useCompanyId();
+  const [companyId] = useCompanyId();
   const [values, setValues] = useState({});
   const [touched, setTouched] = useState({});
   const [step, setStep] = useState(0); // index into SECTIONS, SECTIONS.length === review screen
@@ -126,8 +117,7 @@ export default function Intake() {
 
   const overallComplete = ALL_FIELDS.every((f) => !fieldError(f, values[f.field_key]));
 
-  // Shape of the POST /intake payload Step 5/6 will send — a list of
-  // { field_key, response_text } pairs the backend maps to IntakeSession rows.
+  
   const payloadPreview = ALL_FIELDS.map((f) => ({
     field_key: f.field_key,
     clause_number: f.clause_number,
@@ -174,22 +164,6 @@ export default function Intake() {
       title="Guided Intake"
       sub="A plain-language questionnaire that maps every answer 1:1 to a Schedule VI data field, so promoters never see regulatory language directly."
     >
-      <div className="company-bar">
-        <label htmlFor="company-id">Company ID</label>
-        <input
-          id="company-id"
-          type="text"
-          className="intake-input"
-          placeholder="Paste the company_id to save this intake against"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value.trim())}
-        />
-        <span className="company-bar-hint">
-          Temporary until the company picker ships — copy this from{" "}
-          <code>POST /companies</code> or your seeded dev company.
-        </span>
-      </div>
-
       <div className="intake-progress">
         {SECTIONS.map((s, i) => (
           <button

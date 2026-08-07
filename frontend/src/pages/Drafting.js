@@ -10,7 +10,7 @@ const SECTIONS = [
 ];
 
 export default function Drafting() {
-  const [companyId, setCompanyId] = useCompanyId();
+  const [companyId] = useCompanyId();
   const [drafts, setDrafts] = useState({}); 
   const [generating, setGenerating] = useState(null); 
   const [errorMsg, setErrorMsg] = useState("");
@@ -73,22 +73,6 @@ export default function Drafting() {
       title="Drafting Engine"
       sub="Generates DRHP sections from your intake answers and retrieved Schedule VI clauses, each drafted sentence traceable back to its source."
     >
-      <div className="company-bar">
-        <label htmlFor="company-id">Company ID</label>
-        <input
-          id="company-id"
-          type="text"
-          className="intake-input"
-          placeholder="Paste the company_id whose intake you want drafted"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value.trim())}
-        />
-        <span className="company-bar-hint">
-          Same company_id used on the Intake page — the draft is built from that company's
-          saved answers and uploaded financials.
-        </span>
-      </div>
-
       {errorMsg && <p className="field-error">{errorMsg}</p>}
 
       <div className="mock-grid">

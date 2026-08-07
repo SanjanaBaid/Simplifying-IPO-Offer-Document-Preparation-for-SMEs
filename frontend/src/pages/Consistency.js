@@ -16,7 +16,7 @@ const CLAIM_STATUS_CLASS = {
 };
 
 export default function Consistency() {
-  const [companyId, setCompanyId] = useCompanyId();
+  const [companyId] = useCompanyId();
   const [threshold, setThreshold] = useState(1.0);
   const [result, setResult] = useState(null);
   const [checking, setChecking] = useState(false);
@@ -53,22 +53,6 @@ export default function Consistency() {
       title="Consistency Checker"
       sub="Cross-references figures drafted in the narrative against every extracted financial line item, flagging mismatches before they reach the auditor."
     >
-      <div className="company-bar">
-        <label htmlFor="company-id">Company ID</label>
-        <input
-          id="company-id"
-          type="text"
-          className="intake-input"
-          placeholder="Paste the company_id whose drafts you want checked"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value.trim())}
-        />
-        <span className="company-bar-hint">
-          Checks the latest version of every drafted section against this company's uploaded
-          financials.
-        </span>
-      </div>
-
       <div className="company-bar">
         <label htmlFor="threshold">Materiality threshold (%)</label>
         <input

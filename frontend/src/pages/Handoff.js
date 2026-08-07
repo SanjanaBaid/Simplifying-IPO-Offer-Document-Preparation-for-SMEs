@@ -26,7 +26,7 @@ function downloadBlob(data, filename, mimeType) {
 }
 
 export default function Handoff() {
-  const [companyId, setCompanyId] = useCompanyId();
+  const [companyId] = useCompanyId();
   const [scorecard, setScorecard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(null); // "pdf" | "json" | null
@@ -108,21 +108,6 @@ export default function Handoff() {
       title="Merchant Banker Handoff"
       sub="Packages the drafted sections, consistency report, and gap list into a single review-ready bundle for the merchant banker."
     >
-      <div className="company-bar">
-        <label htmlFor="company-id">Company ID</label>
-        <input
-          id="company-id"
-          type="text"
-          className="intake-input"
-          placeholder="Paste the company_id to build a handoff package for"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value.trim())}
-        />
-        <span className="company-bar-hint">
-          Rolls up Intake, Drafting, Consistency, and Risk Audit completeness into one score.
-        </span>
-      </div>
-
       {errorMsg && <p className="field-error">{errorMsg}</p>}
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
