@@ -107,16 +107,68 @@ def retrieve_clauses(query: str, top_k: int = 5) -> List[Dict]:
 # financial line items are relevant.
 # ---------------------------------------------------------------------------
 
-SectionKey = Literal["risk_factors", "capital_structure"]
+SectionKey = Literal[
+    "general_information",
+    "business_overview",
+    "objects_of_issue",
+    "risk_factors",
+    "capital_structure",
+]
 
 SECTION_CONFIG: Dict[str, Dict] = {
+    "general_information": {
+        "display_name": "General Information",
+        "retrieval_query": (
+            "general information company particulars registered office CIN "
+            "incorporation promoter details SME issuer disclosure"
+        ),
+        "intake_field_keys": [
+            "company_legal_name",
+            "cin",
+            "registered_office_address",
+            "date_of_incorporation",
+            "promoter_full_name",
+            "promoter_pan",
+            "promoter_din",
+        ],
+        "financial_line_labels": [],
+    },
+    "business_overview": {
+        "display_name": "Business Overview",
+        "retrieval_query": (
+            "business overview nature of business products services "
+            "manufacturing operations employees SME issuer disclosure"
+        ),
+        "intake_field_keys": [
+            "nature_of_business",
+            "key_products_services",
+            "manufacturing_locations",
+            "employee_count",
+        ],
+        "financial_line_labels": [],
+    },
+    "objects_of_issue": {
+        "display_name": "Objects of the Issue",
+        "retrieval_query": (
+            "objects of the issue use of proceeds utilization schedule "
+            "issue size SME IPO fund requirement"
+        ),
+        "intake_field_keys": ["issue_size_cr", "objects_of_issue", "proposed_utilization_schedule"],
+        "financial_line_labels": [],
+    },
     "risk_factors": {
         "display_name": "Risk Factors",
         "retrieval_query": (
             "risk factors disclosure requirements internal external risks "
-            "SME issuer material risk ranking"
+            "SME issuer material risk ranking related party transactions"
         ),
-        "intake_field_keys": ["operational_risks", "industry_risks", "litigation_disclosure"],
+        "intake_field_keys": [
+            "operational_risks",
+            "industry_risks",
+            "litigation_disclosure",
+            "related_party_relationship",
+            "related_party_transactions",
+        ],
         "financial_line_labels": [],
     },
     "capital_structure": {
@@ -209,6 +261,61 @@ def _format_intake(answers: Dict[str, Optional[str]]) -> str:
     return "\n".join(lines) if lines else "(No intake answers on file.)"
 
 
+def build_general_information_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
+    return f"""Draft the "General Information" section of the offer document for {company_name}.
+
+RELEVANT SCHEDULE VI / ICDR CLAUSES:
+{_format_clauses(clauses)}
+
+COMPANY & PROMOTER PARTICULARS (from intake):
+{_format_intake(intake_answers)}
+
+Instructions:
+1. State the company's full legal name, CIN, registered office address, and date of incorporation.
+2. Identify the promoter(s) by name, PAN, and DIN (if a director).
+3. Cite the governing clause number in square brackets after each disclosure.
+4. If any particular is "(not provided)", write "[NEEDS PROMOTER INPUT: <what's missing>]" instead of \
+guessing — never invent a CIN, PAN, DIN, or address.
+"""
+
+
+def build_business_overview_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
+    return f"""Draft the "Business Overview" section of the offer document for {company_name}.
+
+RELEVANT SCHEDULE VI / ICDR CLAUSES:
+{_format_clauses(clauses)}
+
+BUSINESS & OPERATIONS PARTICULARS (from intake):
+{_format_intake(intake_answers)}
+
+Instructions:
+1. Describe the nature of the company's business and its key products or services in plain, factual terms.
+2. State where the company manufactures or operates from, and its current employee count.
+3. Cite the governing clause number in square brackets after each disclosure.
+4. If an intake answer is "(not provided)" or too vague to disclose accurately, write \
+"[NEEDS PROMOTER INPUT: <what's missing>]" rather than filling it in yourself.
+"""
+
+
+def build_objects_of_issue_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
+    return f"""Draft the "Objects of the Issue" section of the offer document for {company_name}.
+
+RELEVANT SCHEDULE VI / ICDR CLAUSES:
+{_format_clauses(clauses)}
+
+PROPOSED ISSUE PARTICULARS (from intake):
+{_format_intake(intake_answers)}
+
+Instructions:
+1. State the proposed issue size in ₹ crore.
+2. Explain what the company intends to use the raised funds for (objects of the issue).
+3. Set out the proposed utilization schedule if one was provided.
+4. Cite the governing clause/regulation number in square brackets after each disclosure.
+5. If an intake answer is "(not provided)", write "[NEEDS PROMOTER INPUT: <what's missing>]" instead of \
+guessing at figures or a schedule.
+"""
+
+
 def build_risk_factors_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
     return f"""Draft the "Risk Factors" section of the offer document for {company_name}.
 
@@ -220,7 +327,8 @@ PROMOTER-REPORTED RISKS (from intake):
 
 Instructions:
 1. Produce one risk factor per distinct risk raised by the promoter, each as its own paragraph with a \
-short bolded heading.
+short bolded heading. This includes any related-party relationships or transactions reported above — \
+draft a "Related Party Risk" factor from those answers the same way you would any other risk.
 2. Quantify materiality where the promoter gave numbers; otherwise state the risk specifically to this \
 company's business rather than in generic industry terms.
 3. Cite the governing clause number in square brackets at the end of each risk factor.
@@ -262,6 +370,9 @@ If a figure is missing, write "[NEEDS PROMOTER INPUT: <what's missing>]" instead
 
 
 SECTION_PROMPT_BUILDERS = {
+    "general_information": build_general_information_prompt,
+    "business_overview": build_business_overview_prompt,
+    "objects_of_issue": build_objects_of_issue_prompt,
     "risk_factors": build_risk_factors_prompt,
     "capital_structure": build_capital_structure_prompt,
 }
@@ -410,11 +521,12 @@ def generate_draft_section(payload: DraftGenerateIn, db: Session = Depends(get_d
 
     clauses = retrieve_clauses(config["retrieval_query"], top_k=payload.top_k)
 
-    if payload.section == "capital_structure":
+    builder = SECTION_PROMPT_BUILDERS[payload.section]
+    if config["financial_line_labels"]:
         financial_items = _gather_financial_line_items(db, company.id, config["financial_line_labels"])
-        prompt = build_capital_structure_prompt(clauses, intake_answers, financial_items, company.name)
+        prompt = builder(clauses, intake_answers, financial_items, company.name)
     else:
-        prompt = build_risk_factors_prompt(clauses, intake_answers, company.name)
+        prompt = builder(clauses, intake_answers, company.name)
 
     draft_text = call_llm(prompt)
 

@@ -32,7 +32,13 @@ from consistency import (
 router = APIRouter(prefix="/handoff", tags=["handoff"])
 
 MODULE_MAX = 20
-CORE_SECTIONS = ["Risk Factors", "Capital Structure"]
+CORE_SECTIONS = [
+    "General Information",
+    "Business Overview",
+    "Objects of the Issue",
+    "Risk Factors",
+    "Capital Structure",
+]
 
 PRIORITY_RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
 

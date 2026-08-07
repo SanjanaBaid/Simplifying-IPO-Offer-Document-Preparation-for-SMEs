@@ -6,6 +6,9 @@ import { renderInlineMarkdown } from "../utils/inlinemarkdown";
 
 
 const SECTIONS = [
+  { key: "general_information", label: "General Information" },
+  { key: "business_overview", label: "Business Overview" },
+  { key: "objects_of_issue", label: "Objects of the Issue" },
   { key: "risk_factors", label: "Risk Factors" },
   { key: "capital_structure", label: "Capital Structure" },
 ];
