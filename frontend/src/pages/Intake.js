@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageShell from "../components/PageShell";
 import FinancialUpload from "../components/FinancialUpload";
 import apiClient from "../api/client";
@@ -67,6 +67,49 @@ export default function Intake() {
   const [submitted, setSubmitted] = useState(false);
   const [submitStatus, setSubmitStatus] = useState("idle"); // idle | saving | error
   const [submitError, setSubmitError] = useState("");
+  const [loadingExisting, setLoadingExisting] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  // Pre-fill from whatever's already saved for this company — otherwise the
+  // form (and Review & Submit) always renders blank on reopen, even when the
+  // data is sitting in the database.
+  useEffect(() => {
+    if (!companyId) {
+      setLoadingExisting(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingExisting(true);
+    setLoadError("");
+    apiClient
+      .get(`/intake?company_id=${encodeURIComponent(companyId)}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const existing = {};
+        const existingTouched = {};
+        data.responses.forEach((r) => {
+          if (r.response_text != null && r.response_text !== "") {
+            existing[r.field_key] = r.response_text;
+            existingTouched[r.field_key] = true;
+          }
+        });
+        setValues((prev) => ({ ...existing, ...prev }));
+        setTouched((prev) => ({ ...existingTouched, ...prev }));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLoadError(
+          err.response?.data?.detail || "Couldn't load previously saved answers."
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
 
   const isReview = step === SECTIONS.length;
   const currentSection = SECTIONS[step];
@@ -189,8 +232,12 @@ export default function Intake() {
       </div>
 
       <div className="intake-progress-meta">
-        {answeredCount} of {ALL_FIELDS.length} fields answered
+        {loadingExisting
+          ? "Loading previously saved answers…"
+          : `${answeredCount} of ${ALL_FIELDS.length} fields answered`}
       </div>
+
+      {loadError && <p className="field-error">{loadError}</p>}
 
       {!isReview && (
         <div className="intake-section">

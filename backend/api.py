@@ -39,6 +39,42 @@ class IntakeSubmitOut(BaseModel):
     skipped: List[str]
 
 
+class IntakeAnswerOut(BaseModel):
+    field_key: str
+    response_text: Optional[str] = None
+
+
+class IntakeGetOut(BaseModel):
+    company_id: str
+    responses: List[IntakeAnswerOut]
+
+
+@router.get("/intake", response_model=IntakeGetOut)
+def get_intake(company_id: str, db: Session = Depends(get_db)):
+    """Returns whatever has already been saved for this company, keyed by
+    field_key, so the frontend can pre-fill the guided-intake form on load
+    instead of always rendering blank. Without this, POST /intake was
+    write-only — reopening a mandate showed every field as INCOMPLETE even
+    when the data was sitting in the database."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+
+    rows = (
+        db.query(ScheduleVIField.field_key, IntakeSession.response_text)
+        .join(IntakeSession, IntakeSession.field_id == ScheduleVIField.id)
+        .filter(IntakeSession.company_id == company_id)
+        .all()
+    )
+    return IntakeGetOut(
+        company_id=company_id,
+        responses=[
+            IntakeAnswerOut(field_key=field_key, response_text=response_text)
+            for field_key, response_text in rows
+        ],
+    )
+
+
 @router.post("/intake", response_model=IntakeSubmitOut)
 def submit_intake(payload: IntakeSubmitIn, db: Session = Depends(get_db)):
     company = db.query(Company).filter(Company.id == payload.company_id).first()
