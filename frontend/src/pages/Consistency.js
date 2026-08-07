@@ -2,6 +2,7 @@ import { useState } from "react";
 import PageShell from "../components/PageShell";
 import apiClient from "../api/client";
 import useCompanyId from "../hooks/useCompanyId";
+import { renderInlineMarkdown } from "../utils/inlinemarkdown";
 
 const CLAIM_STATUS_LABEL = {
   match: "Consistent",
@@ -125,7 +126,7 @@ export default function Consistency() {
                       <span className="review-clause">Variance</span>
                       <span className="review-value">{claim.variance_pct}%</span>
                     </div>
-                    <p className="field-helper">"{claim.snippet}"</p>
+                    <p className="field-helper">"{renderInlineMarkdown(claim.snippet)}"</p>
                   </div>
                 ))}
               </div>

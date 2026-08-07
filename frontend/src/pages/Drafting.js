@@ -263,7 +263,7 @@ export default function Drafting() {
               .filter((item) => item.needs_promoter_input)
               .map((item, i) => (
                 <li key={i} style={{ marginBottom: "0.5rem" }}>
-                  {item.text}
+                  {renderInlineMarkdown(item.text)}
                 </li>
               ))}
           </ul>
