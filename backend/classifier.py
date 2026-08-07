@@ -32,8 +32,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
-from models import Company, DraftSection, RiskClassification
+from models import Company, DraftSection, Promoter, RiskClassification
 
 router = APIRouter(prefix="/classifier", tags=["classifier"])
 
@@ -175,13 +176,19 @@ class ClassifyRisksOut(BaseModel):
 
 
 @router.post("/classify-risks", response_model=ClassifyRisksOut)
-def classify_risks(company_id: str, db: Session = Depends(get_db)):
+def classify_risks(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Classify the latest drafted Risk Factors section for a company. Split into
     one item per paragraph (matching how drafting.py prompts the LLM to draft
     each risk as its own paragraph)."""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     latest_draft = (
         db.query(DraftSection)
@@ -222,10 +229,20 @@ def classify_risks(company_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/classify-risks/latest", response_model=ClassifyRisksOut)
-def get_latest_classification(company_id: str, db: Session = Depends(get_db)):
+def get_latest_classification(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Return the most recently saved classification for a company without
     recomputing anything (no LLM calls) — used to restore state when the
     Drafting page is revisited."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
+
     latest = (
         db.query(RiskClassification)
         .filter(RiskClassification.company_id == company_id)

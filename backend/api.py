@@ -6,16 +6,31 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
 from models import (
     Company,
     ExtractedFinancialLineItem,
     FinancialDocument,
     IntakeSession,
+    Promoter,
     ScheduleVIField,
 )
 
 router = APIRouter()
+
+
+def _get_owned_company(company_id: str, current: Promoter, db: Session) -> Company:
+    """Fetch a company and verify it belongs to the authenticated promoter.
+    Every endpoint below takes a bare company_id — without this check, any
+    logged-in promoter could read or overwrite another promoter's intake
+    answers and uploaded financials just by knowing/guessing their company_id."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
+    return company
 
 
 class IntakeResponseIn(BaseModel):
@@ -45,15 +60,17 @@ class IntakeGetOut(BaseModel):
 
 
 @router.get("/intake", response_model=IntakeGetOut)
-def get_intake(company_id: str, db: Session = Depends(get_db)):
+def get_intake(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Returns whatever has already been saved for this company, keyed by
     field_key, so the frontend can pre-fill the guided-intake form on load
     instead of always rendering blank. Without this, POST /intake was
     write-only — reopening a mandate showed every field as INCOMPLETE even
     when the data was sitting in the database."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    _get_owned_company(company_id, current, db)
 
     rows = (
         db.query(ScheduleVIField.field_key, IntakeSession.response_text)
@@ -71,10 +88,12 @@ def get_intake(company_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/intake", response_model=IntakeSubmitOut)
-def submit_intake(payload: IntakeSubmitIn, db: Session = Depends(get_db)):
-    company = db.query(Company).filter(Company.id == payload.company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail=f"Unknown company_id: {payload.company_id}")
+def submit_intake(
+    payload: IntakeSubmitIn,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
+    company = _get_owned_company(payload.company_id, current, db)
 
     saved = 0
     skipped: List[str] = []
@@ -197,14 +216,16 @@ class FinancialsGetOut(BaseModel):
 
 
 @router.get("/financials", response_model=FinancialsGetOut)
-def get_financials(company_id: str, db: Session = Depends(get_db)):
+def get_financials(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Returns the most recently uploaded financial document (and its
     extracted line items) for this company, so the frontend can restore the
     extraction results panel on load instead of showing it blank after
     every navigation — the same gap /intake had before it got a GET route."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    _get_owned_company(company_id, current, db)
 
     document = (
         db.query(FinancialDocument)
@@ -235,11 +256,10 @@ def get_financials(company_id: str, db: Session = Depends(get_db)):
 async def upload_financials(
     company_id: str = Form(...),
     file: UploadFile = File(...),
+    current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    company = _get_owned_company(company_id, current, db)
 
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(status_code=400, detail="Only PDF financial statements are supported.")

@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
 from models import (
     Company,
@@ -16,6 +17,7 @@ from models import (
     ExtractedFinancialLineItem,
     FinancialDocument,
     IntakeSession,
+    Promoter,
     ScheduleVIField,
 )
 from classifier import RISK_FACTORS_SECTION_NAME, classify_item
@@ -433,10 +435,16 @@ def render_pdf(package: Dict) -> bytes:
 
 
 @router.get("/scorecard", response_model=ScorecardOut)
-def get_scorecard(company_id: str, db: Session = Depends(get_db)):
+def get_scorecard(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     result = compute_scorecard(db, company)
 
@@ -456,11 +464,14 @@ def get_scorecard(company_id: str, db: Session = Depends(get_db)):
 def export_handoff(
     company_id: str,
     export_format: Literal["pdf", "json"] = "json",
+    current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     scorecard = compute_scorecard(db, company)
     company.completeness_score = scorecard["total_score"]

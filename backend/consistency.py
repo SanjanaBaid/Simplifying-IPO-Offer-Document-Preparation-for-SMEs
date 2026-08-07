@@ -1,4 +1,3 @@
-
 import re
 from typing import Dict, List, Optional
 
@@ -6,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
-from models import Company, DraftSection, ExtractedFinancialLineItem, FinancialDocument
+from models import Company, DraftSection, ExtractedFinancialLineItem, FinancialDocument, Promoter
 
 router = APIRouter(prefix="/consistency", tags=["consistency"])
 
@@ -213,6 +213,7 @@ class ConsistencyCheckOut(BaseModel):
 def check_consistency(
     company_id: str,
     materiality_threshold_pct: float = DEFAULT_MATERIALITY_THRESHOLD_PCT,
+    current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
     """Run the full consistency check for a company: numeric-claim matching,
@@ -220,6 +221,8 @@ def check_consistency(
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
 
     all_drafts = (

@@ -32,8 +32,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
-from models import Company, ScheduleVIField, IntakeSession
+from models import Company, IntakeSession, Promoter, ScheduleVIField
 from handoff import _latest_drafts_by_section, compute_scorecard
 
 router = APIRouter(prefix="/audit", tags=["audit"])
@@ -181,10 +182,16 @@ class AuditReportOut(BaseModel):
 
 
 @router.get("/report", response_model=AuditReportOut)
-def get_audit_report(company_id: str, db: Session = Depends(get_db)):
+def get_audit_report(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     result = compute_scorecard(db, company)
     clause_coverage = compute_clause_coverage(db, company_id)

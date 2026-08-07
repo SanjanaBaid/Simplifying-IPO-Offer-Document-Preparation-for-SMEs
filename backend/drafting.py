@@ -33,6 +33,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from auth import get_current_promoter
 from database import get_db
 from models import (
     Company,
@@ -40,6 +41,7 @@ from models import (
     ExtractedFinancialLineItem,
     FinancialDocument,
     IntakeSession,
+    Promoter,
     ScheduleVIField,
 )
 
@@ -465,7 +467,11 @@ def get_clauses_for_section(section: SectionKey, query: Optional[str] = None, to
 
 
 @router.get("/sections", response_model=List[DraftGenerateOut])
-def list_latest_sections(company_id: str, db: Session = Depends(get_db)):
+def list_latest_sections(
+    company_id: str,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Return the latest saved version of every drafted section for a company,
     without calling the LLM or bumping the version — used to restore the
     Drafting page's state on mount instead of showing it blank until the
@@ -473,6 +479,8 @@ def list_latest_sections(company_id: str, db: Session = Depends(get_db)):
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     out: List[DraftGenerateOut] = []
     for section_key, config in SECTION_CONFIG.items():
@@ -508,11 +516,17 @@ def list_latest_sections(company_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/generate", response_model=DraftGenerateOut)
-def generate_draft_section(payload: DraftGenerateIn, db: Session = Depends(get_db)):
+def generate_draft_section(
+    payload: DraftGenerateIn,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
     """Retrieve clauses + intake answers for a section, draft it via the LLM, and save a new version."""
     company = db.query(Company).filter(Company.id == payload.company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {payload.company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
 
     config = SECTION_CONFIG[payload.section]
 
