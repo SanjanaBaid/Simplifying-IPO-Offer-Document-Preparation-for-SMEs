@@ -18,11 +18,6 @@ from models import (
 router = APIRouter()
 
 
-# ---------------------------------------------------------------------------
-# POST /intake — save guided-intake answers, mapped to Schedule VI fields
-# ---------------------------------------------------------------------------
-
-
 class IntakeResponseIn(BaseModel):
     field_key: str
     response_text: Optional[str] = None
@@ -117,12 +112,6 @@ def submit_intake(payload: IntakeSubmitIn, db: Session = Depends(get_db)):
     return IntakeSubmitOut(company_id=company.id, saved=saved, skipped=skipped)
 
 
-# ---------------------------------------------------------------------------
-# POST /upload-financials — extract line items from a financial PDF
-# ---------------------------------------------------------------------------
-
-# A conservative "label ... trailing number" pattern for lines pulled straight
-# from PDF text (fallback path when the PDF has no native table structure).
 LINE_ITEM_RE = re.compile(
     r"^(?P<label>[A-Za-z][A-Za-z0-9 &/().,'-]{2,80}?)\s+"
     r"(?P<value>\(?-?[\d,]+(?:\.\d+)?\)?)\s*$"
@@ -169,8 +158,7 @@ def _extract_line_items(pdf_bytes: bytes):
                             )
                             break
     except Exception:
-        # find_tables isn't available on every PyMuPDF build — fall through
-        # to the text-line regex path below.
+        
         pass
 
     if not items:
@@ -193,6 +181,54 @@ def _extract_line_items(pdf_bytes: bytes):
 
     doc.close()
     return items
+
+
+class FinancialLineItemOut(BaseModel):
+    label: str
+    value: Optional[float] = None
+    period: Optional[str] = None
+
+
+class FinancialsGetOut(BaseModel):
+    document_id: Optional[str] = None
+    filename: Optional[str] = None
+    company_id: str
+    line_items: List[FinancialLineItemOut]
+
+
+@router.get("/financials", response_model=FinancialsGetOut)
+def get_financials(company_id: str, db: Session = Depends(get_db)):
+    """Returns the most recently uploaded financial document (and its
+    extracted line items) for this company, so the frontend can restore the
+    extraction results panel on load instead of showing it blank after
+    every navigation — the same gap /intake had before it got a GET route."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+
+    document = (
+        db.query(FinancialDocument)
+        .filter(FinancialDocument.company_id == company_id)
+        .order_by(FinancialDocument.uploaded_at.desc())
+        .first()
+    )
+    if not document:
+        return FinancialsGetOut(company_id=company_id, line_items=[])
+
+    line_items = (
+        db.query(ExtractedFinancialLineItem)
+        .filter(ExtractedFinancialLineItem.document_id == document.id)
+        .all()
+    )
+    return FinancialsGetOut(
+        document_id=document.id,
+        filename=document.filename,
+        company_id=company_id,
+        line_items=[
+            FinancialLineItemOut(label=li.label, value=li.value, period=li.period)
+            for li in line_items
+        ],
+    )
 
 
 @router.post("/upload-financials")

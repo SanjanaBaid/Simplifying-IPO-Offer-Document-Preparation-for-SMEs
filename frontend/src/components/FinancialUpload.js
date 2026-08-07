@@ -1,10 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import apiClient from "../api/client";
-
-// Step 6 — drag-and-drop financial document upload, connected to
-// POST /upload-financials (Step 5). Person A's endpoint runs the PDF through
-// PyMuPDF/OCR and returns the extracted line items, which we render as a
-// simple table so the promoter can sanity-check what was pulled out.
 
 const ACCEPTED_TYPE = "application/pdf";
 
@@ -14,6 +9,26 @@ export default function FinancialUpload({ companyId }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [result, setResult] = useState(null); // { filename, line_items }
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!companyId) return;
+    let cancelled = false;
+
+    apiClient
+      .get("/financials", { params: { company_id: companyId } })
+      .then(({ data }) => {
+        if (cancelled || !data.document_id) return;
+        setResult({ filename: data.filename, line_items: data.line_items });
+        setStatus("success");
+      })
+      .catch(() => {
+        // No prior upload, or the fetch failed — leave the dropzone as-is.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
 
   const uploadFile = useCallback(
     async (file) => {

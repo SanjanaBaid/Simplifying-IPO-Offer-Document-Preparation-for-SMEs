@@ -1,21 +1,3 @@
-"""Dev-only convenience script — seeds the ScheduleVIField table.
-
-The Guided Intake UI (frontend/src/scheduleViFields.js, Step 4) already defines
-the full field catalogue client-side, but nothing ever inserted the matching
-rows into the backend's ScheduleVIField table (Step 1's schema). Without those
-rows, POST /intake silently skips every answer (field_key not found), so
-drafting.py's _gather_intake_answers() always comes back empty.
-
-This mirrors scheduleViFields.js's SECTIONS list 1:1 — same field_key,
-clause_number, section_name, and field_type for all 22 fields, kept in the
-same order. If you add/change a field in scheduleViFields.js, update this
-file to match.
-
-Run once against a fresh sherpa.db (safe to re-run — it skips fields that
-already exist by field_key):
-
-    python seed_schedule_vi_fields.py
-"""
 
 from database import Base, SessionLocal, engine
 import models  

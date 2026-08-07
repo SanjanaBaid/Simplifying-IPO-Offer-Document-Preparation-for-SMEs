@@ -22,26 +22,34 @@ export default function Consistency() {
   const [checking, setChecking] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  async function handleCheck() {
+  async function runCheck(thresholdValue, { silent = false } = {}) {
     if (!companyId) {
-      setErrorMsg("Enter a company ID above before running the checker.");
+      if (!silent) setErrorMsg("Enter a company ID above before running the checker.");
       return;
     }
     setChecking(true);
-    setErrorMsg("");
+    if (!silent) setErrorMsg("");
     try {
       const { data } = await apiClient.post(
-        `/consistency/check?company_id=${encodeURIComponent(companyId)}&materiality_threshold_pct=${threshold}`
+        `/consistency/check?company_id=${encodeURIComponent(companyId)}&materiality_threshold_pct=${thresholdValue}`
       );
       setResult(data);
     } catch (err) {
-      setErrorMsg(
-        err.response?.data?.detail ||
-          "Couldn't run the consistency check — confirm drafted sections and uploaded financials exist for this company."
-      );
+      // On the silent auto-run, "nothing to check yet" (404) is a normal,
+      // quiet state — the placeholder note below already covers it.
+      if (!silent || err.response?.status !== 404) {
+        setErrorMsg(
+          err.response?.data?.detail ||
+            "Couldn't run the consistency check — confirm drafted sections and uploaded financials exist for this company."
+        );
+      }
     } finally {
       setChecking(false);
     }
+  }
+
+  function handleCheck() {
+    return runCheck(threshold);
   }
 
   const flaggedClaims = result?.numeric_claims?.filter((c) => c.status === "mismatch") || [];

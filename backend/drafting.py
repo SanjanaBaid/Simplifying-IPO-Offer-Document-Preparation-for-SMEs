@@ -288,7 +288,7 @@ def call_llm(user_prompt: str) -> str:
 
     from groq import Groq  # imported lazily so the package is only required when a key is set
 
-    client = Groq(api_key=api_key)
+    client = Groq(api_key=api_key, timeout=20.0)
     response = client.chat.completions.create(
         model=DRAFTING_LLM_MODEL,
         max_tokens=1500,
@@ -327,6 +327,7 @@ class DraftGenerateIn(BaseModel):
 class DraftGenerateOut(BaseModel):
     id: str
     company_id: str
+    section_key: str
     section_name: str
     version: int
     content: str
@@ -350,6 +351,49 @@ def get_clauses_for_section(section: SectionKey, query: Optional[str] = None, to
     effective_query = query or config["retrieval_query"]
     clauses = retrieve_clauses(effective_query, top_k=top_k)
     return ClausesQueryOut(section=section, query=effective_query, clauses=clauses)
+
+
+@router.get("/sections", response_model=List[DraftGenerateOut])
+def list_latest_sections(company_id: str, db: Session = Depends(get_db)):
+    """Return the latest saved version of every drafted section for a company,
+    without calling the LLM or bumping the version — used to restore the
+    Drafting page's state on mount instead of showing it blank until the
+    user clicks 'Generate' again."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
+
+    out: List[DraftGenerateOut] = []
+    for section_key, config in SECTION_CONFIG.items():
+        latest = (
+            db.query(DraftSection)
+            .filter(
+                DraftSection.company_id == company.id,
+                DraftSection.section_name == config["display_name"],
+            )
+            .order_by(DraftSection.version.desc())
+            .first()
+        )
+        if not latest:
+            continue
+
+        intake_answers = _gather_intake_answers(db, company.id, config["intake_field_keys"])
+        missing_fields = [key for key, value in intake_answers.items() if not value or not value.strip()]
+
+        out.append(
+            DraftGenerateOut(
+                id=latest.id,
+                company_id=company.id,
+                section_key=section_key,
+                section_name=latest.section_name,
+                version=latest.version,
+                content=latest.content,
+                schedule_vi_clause=latest.schedule_vi_clause,
+                retrieved_clauses=[],
+                missing_intake_fields=missing_fields,
+            )
+        )
+    return out
 
 
 @router.post("/generate", response_model=DraftGenerateOut)
@@ -398,6 +442,7 @@ def generate_draft_section(payload: DraftGenerateIn, db: Session = Depends(get_d
     return DraftGenerateOut(
         id=draft_row.id,
         company_id=company.id,
+        section_key=payload.section,
         section_name=draft_row.section_name,
         version=draft_row.version,
         content=draft_row.content,

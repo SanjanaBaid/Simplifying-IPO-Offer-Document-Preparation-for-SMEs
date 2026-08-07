@@ -1,23 +1,3 @@
-"""
-Knowledge base ingestion pipeline.
-
-Chunks SEBI ICDR Regulations, Schedule VI, and SME Chapter IX (Regulation 229) source
-text, embeds each chunk, and stores it in a persistent ChromaDB collection tagged by
-clause/schedule item number so the Drafting Engine (Phase 2) can retrieve clauses by
-section.
-
-Usage:
-    python ingest.py --source ./regulations/icdr_schedule_vi.txt
-
-Source file format expected: plain text with clause markers on their own line, e.g.
-    [CLAUSE 6(iii)]
-    ... clause text ...
-    [CLAUSE 11(ix)]
-    ... clause text ...
-
-Drop the actual ICDR / Schedule VI / Chapter IX text under ./regulations/ before running
-this — it is not bundled here since it's SEBI's regulatory text, not project source code.
-"""
 
 import argparse
 import re

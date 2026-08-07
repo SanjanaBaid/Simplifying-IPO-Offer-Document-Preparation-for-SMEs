@@ -63,16 +63,13 @@ export default function Intake() {
   const [companyId] = useCompanyId();
   const [values, setValues] = useState({});
   const [touched, setTouched] = useState({});
-  const [step, setStep] = useState(0); // index into SECTIONS, SECTIONS.length === review screen
+  const [step, setStep] = useState(0); 
   const [submitted, setSubmitted] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState("idle"); // idle | saving | error
+  const [submitStatus, setSubmitStatus] = useState("idle");
   const [submitError, setSubmitError] = useState("");
   const [loadingExisting, setLoadingExisting] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // Pre-fill from whatever's already saved for this company — otherwise the
-  // form (and Review & Submit) always renders blank on reopen, even when the
-  // data is sitting in the database.
   useEffect(() => {
     if (!companyId) {
       setLoadingExisting(false);
@@ -95,6 +92,14 @@ export default function Intake() {
         });
         setValues((prev) => ({ ...existing, ...prev }));
         setTouched((prev) => ({ ...existingTouched, ...prev }));
+
+        const alreadyComplete =
+          data.responses.length > 0 &&
+          ALL_FIELDS.every((f) => !fieldError(f, existing[f.field_key]));
+        if (alreadyComplete) {
+          setSubmitted(true);
+          setStep(SECTIONS.length);
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -108,7 +113,7 @@ export default function Intake() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [companyId]);
 
   const isReview = step === SECTIONS.length;

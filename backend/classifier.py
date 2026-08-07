@@ -33,7 +33,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Company, DraftSection
+from models import Company, DraftSection, RiskClassification
 
 router = APIRouter(prefix="/classifier", tags=["classifier"])
 
@@ -96,7 +96,14 @@ def llm_specificity_score(text: str) -> Optional[int]:
     try:
         from groq import Groq
 
-        client = Groq(api_key=api_key)
+        # A hard timeout matters here specifically: score_risk_audit() in
+        # handoff.py calls this once per risk paragraph in a loop, so an
+        # unreachable/stalled API call used to hang the whole /audit/report
+        # and /handoff/scorecard request indefinitely (no exception, no
+        # response — the frontend's "Auditing…"/"Loading…" button just spun
+        # forever). Falling back to the heuristic score after 8s keeps both
+        # endpoints responsive even when Groq is unreachable.
+        client = Groq(api_key=api_key, timeout=8.0)
         response = client.chat.completions.create(
             model=DRAFTING_LLM_MODEL,
             max_tokens=10,
@@ -192,10 +199,48 @@ def classify_risks(company_id: str, db: Session = Depends(get_db)):
     items = [classify_item(p) for p in paragraphs]
     flagged_count = sum(1 for i in items if i["needs_promoter_input"])
 
+    # Persist so the result survives navigating away and back — previously
+    # this lived only in the frontend's React state and vanished on remount.
+    db.add(
+        RiskClassification(
+            company_id=company_id,
+            draft_section_id=latest_draft.id,
+            version=latest_draft.version,
+            items=items,
+            flagged_count=flagged_count,
+        )
+    )
+    db.commit()
+
     return ClassifyRisksOut(
         company_id=company_id,
         draft_section_id=latest_draft.id,
         version=latest_draft.version,
         items=items,
         flagged_count=flagged_count,
+    )
+
+
+@router.get("/classify-risks/latest", response_model=ClassifyRisksOut)
+def get_latest_classification(company_id: str, db: Session = Depends(get_db)):
+    """Return the most recently saved classification for a company without
+    recomputing anything (no LLM calls) — used to restore state when the
+    Drafting page is revisited."""
+    latest = (
+        db.query(RiskClassification)
+        .filter(RiskClassification.company_id == company_id)
+        .order_by(RiskClassification.created_at.desc())
+        .first()
+    )
+    if not latest:
+        raise HTTPException(
+            status_code=404,
+            detail="No saved risk classification for this company yet.",
+        )
+    return ClassifyRisksOut(
+        company_id=company_id,
+        draft_section_id=latest.draft_section_id,
+        version=latest.version,
+        items=latest.items,
+        flagged_count=latest.flagged_count,
     )

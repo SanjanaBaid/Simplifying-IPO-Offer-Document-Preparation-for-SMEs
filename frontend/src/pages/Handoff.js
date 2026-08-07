@@ -2,6 +2,7 @@ import { useState } from "react";
 import PageShell from "../components/PageShell";
 import apiClient from "../api/client";
 import useCompanyId from "../hooks/useCompanyId";
+import { renderInlineMarkdown } from "../utils/inlinemarkdown";
 
 const PRIORITY_STATUS_CLASS = { HIGH: "flag", MEDIUM: "pending", LOW: "clear" };
 
@@ -32,26 +33,32 @@ export default function Handoff() {
   const [exporting, setExporting] = useState(null); // "pdf" | "json" | null
   const [errorMsg, setErrorMsg] = useState("");
 
-  async function handleLoadScorecard() {
+  async function loadScorecard({ silent = false } = {}) {
     if (!companyId) {
-      setErrorMsg("Enter a company ID above before loading the scorecard.");
+      if (!silent) setErrorMsg("Enter a company ID above before loading the scorecard.");
       return;
     }
     setLoading(true);
-    setErrorMsg("");
+    if (!silent) setErrorMsg("");
     try {
       const { data } = await apiClient.get(
         `/handoff/scorecard?company_id=${encodeURIComponent(companyId)}`
       );
       setScorecard(data);
     } catch (err) {
-      setErrorMsg(
-        err.response?.data?.detail ||
-          "Couldn't load the scorecard — confirm the company_id is correct and the backend is running."
-      );
+      if (!silent) {
+        setErrorMsg(
+          err.response?.data?.detail ||
+            "Couldn't load the scorecard — confirm the company_id is correct and the backend is running."
+        );
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleLoadScorecard() {
+    return loadScorecard();
   }
 
   async function handleExport(format) {
@@ -180,7 +187,7 @@ export default function Handoff() {
                               {g.priority}
                             </span>
                           </div>
-                          <p style={{ margin: 0 }}>{g.description}</p>
+                          <p style={{ margin: 0 }}>{renderInlineMarkdown(g.description)}</p>
                         </div>
                       ))}
                     </div>

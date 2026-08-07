@@ -1,12 +1,3 @@
-"""Dev-only convenience script — NOT part of the Phase 1 plan.
-
-Promoter/company creation and auth aren't in scope until a later phase, but
-POST /intake and POST /upload-financials both require an existing company_id.
-Run this once against a fresh sherpa.db to get a company_id to paste into the
-"Company ID" field on the Intake page while testing Step 6.
-
-    python seed_dev.py
-"""
 
 import bcrypt
 

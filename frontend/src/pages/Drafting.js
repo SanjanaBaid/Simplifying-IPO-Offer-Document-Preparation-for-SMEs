@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageShell from "../components/PageShell";
 import apiClient from "../api/client";
 import useCompanyId from "../hooks/useCompanyId";
+import { renderInlineMarkdown } from "../utils/inlinemarkdown";
 
 
 const SECTIONS = [
@@ -17,6 +18,50 @@ export default function Drafting() {
   const [classification, setClassification] = useState(null); 
   const [classifying, setClassifying] = useState(false);
   const [classifyError, setClassifyError] = useState("");
+  const [loadingExisting, setLoadingExisting] = useState(true);
+
+  // Reload whatever's already been generated/classified for this company —
+  // otherwise this page renders blank on every remount (e.g. navigating to
+  // another tab and back) even though the drafts are sitting in the database.
+  useEffect(() => {
+    if (!companyId) {
+      setLoadingExisting(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingExisting(true);
+
+    apiClient
+      .get(`/drafting/sections?company_id=${encodeURIComponent(companyId)}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const bySectionKey = {};
+        data.forEach((draft) => {
+          bySectionKey[draft.section_key] = draft;
+        });
+        setDrafts(bySectionKey);
+      })
+      .catch(() => {
+        // No drafts yet is a normal, silent state — the "Not drafted yet"
+        // card already communicates that.
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false);
+      });
+
+    apiClient
+      .get(`/classifier/classify-risks/latest?company_id=${encodeURIComponent(companyId)}`)
+      .then(({ data }) => {
+        if (!cancelled) setClassification(data);
+      })
+      .catch(() => {
+        // No saved classification yet — fine, leave it unset.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
 
   async function handleGenerate(section) {
     if (!companyId) {
@@ -74,6 +119,7 @@ export default function Drafting() {
       sub="Generates DRHP sections from your intake answers and retrieved Schedule VI clauses, each drafted sentence traceable back to its source."
     >
       {errorMsg && <p className="field-error">{errorMsg}</p>}
+      {loadingExisting && <p className="placeholder-note">Loading previously generated drafts…</p>}
 
       <div className="mock-grid">
         {SECTIONS.map((section) => {
@@ -93,7 +139,7 @@ export default function Drafting() {
                   {draft.schedule_vi_clause && (
                     <p className="clause-tag">{draft.schedule_vi_clause}</p>
                   )}
-                  <p style={{ whiteSpace: "pre-wrap" }}>{draft.content}</p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{renderInlineMarkdown(draft.content)}</p>
 
                   {hasGaps && (
                     <p className="field-error">
@@ -163,7 +209,7 @@ export default function Drafting() {
                               {!item.scored_with_llm && " (heuristic)"}
                             </span>
                           </div>
-                          <p style={{ margin: 0 }}>{item.text}</p>
+                          <p style={{ margin: 0 }}>{renderInlineMarkdown(item.text)}</p>
                           {item.matched_phrases.length > 0 && (
                             <p className="field-helper">
                               Boilerplate phrases: {item.matched_phrases.join(", ")}

@@ -126,3 +126,19 @@ class DraftSection(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     company = relationship("Company", back_populates="draft_sections")
+
+
+class RiskClassification(Base):
+    """Persists the most recent risk-factor classification run for a company,
+    so the Drafting page can reload it on revisit instead of losing it when
+    the component unmounts (it previously lived only in React state)."""
+
+    __tablename__ = "risk_classifications"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    company_id = Column(String, ForeignKey("companies.id"), nullable=False)
+    draft_section_id = Column(String, ForeignKey("draft_sections.id"), nullable=False)
+    version = Column(Integer, default=1)
+    items = Column(JSON, nullable=False)
+    flagged_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

@@ -1,38 +1,3 @@
-"""
-Consistency Checker API (Phase 3, Step 11).
-
-Parses numeric claims out of every drafted narrative section (Risk Factors,
-Capital Structure, ...) for a company and matches them against the extracted
-financial line items pulled from that company's uploaded financials
-(api.py's /upload-financials, Phase 1 Step 5). Flags anything that doesn't
-line up before it reaches the merchant banker / SEBI.
-
-Three checks run per company:
-
-  1. Numeric-claim matching — regex-extract "<label> ... <number>" pairs from
-     each latest DraftSection, fuzzy-match the label against extracted
-     financial line-item labels (token overlap), and compare the claimed
-     value to the extracted value. A claim is flagged if the relative
-     variance exceeds the materiality threshold.
-  2. Cross-foot checks — for line items sharing a period, if one label reads
-     as a "total" of the others (e.g. "Total Revenue"), verify it actually
-     sums the non-total siblings from the same period. Flags variances
-     beyond the materiality threshold.
-  3. Ratio / sanity checks — structural checks that should never fail
-     regardless of materiality threshold (e.g. paid-up capital exceeding
-     authorized capital). Always flagged if violated.
-
-Every flagged item carries the drafted section's Schedule VI clause
-citation (already stored on DraftSection by drafting.py, Step 7) so the UI
-can show the citation tag right next to the mismatch — same convention as
-the Drafting and Classifier modules.
-
-Endpoint:
-    POST /consistency/check?company_id=...&materiality_threshold_pct=1.0
-
-No LLM calls — this module is pure parsing/matching, so it needs no API key
-and runs instantly against whatever drafts + financials already exist.
-"""
 
 import re
 from typing import Dict, List, Optional

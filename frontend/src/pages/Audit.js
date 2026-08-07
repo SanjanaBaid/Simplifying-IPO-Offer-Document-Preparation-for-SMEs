@@ -2,6 +2,7 @@ import { useState } from "react";
 import PageShell from "../components/PageShell";
 import apiClient from "../api/client";
 import useCompanyId from "../hooks/useCompanyId";
+import { renderInlineMarkdown } from "../utils/inlinemarkdown";
 
 const STATUS_LABEL = { clear: "Satisfied", pending: "Partial", flag: "Gap found" };
 const PRIORITY_STATUS_CLASS = { HIGH: "flag", MEDIUM: "pending", LOW: "clear" };
@@ -12,26 +13,32 @@ export default function Audit() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  async function handleRunAudit() {
+  async function runAudit({ silent = false } = {}) {
     if (!companyId) {
-      setErrorMsg("Enter a company ID above before running the audit.");
+      if (!silent) setErrorMsg("Enter a company ID above before running the audit.");
       return;
     }
     setLoading(true);
-    setErrorMsg("");
+    if (!silent) setErrorMsg("");
     try {
       const { data } = await apiClient.get(
         `/audit/report?company_id=${encodeURIComponent(companyId)}`
       );
       setReport(data);
     } catch (err) {
-      setErrorMsg(
-        err.response?.data?.detail ||
-          "Couldn't run the audit — confirm the company_id is correct and the backend is running."
-      );
+      if (!silent) {
+        setErrorMsg(
+          err.response?.data?.detail ||
+            "Couldn't run the audit — confirm the company_id is correct and the backend is running."
+        );
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleRunAudit() {
+    return runAudit();
   }
 
   const totalGaps = report
@@ -98,7 +105,7 @@ export default function Audit() {
                             {g.priority}
                           </span>
                         </div>
-                        <p style={{ margin: 0 }}>{g.description}</p>
+                        <p style={{ margin: 0 }}>{renderInlineMarkdown(g.description)}</p>
                       </div>
                     ))}
                   </div>
