@@ -24,7 +24,7 @@ banker's review starts from a much stronger baseline.
 |---|---|
 | **Guided Intake** | A plain-language questionnaire maps 1:1 onto Schedule VI data fields, so promoters answer in their own words while the system tracks exactly which regulatory clause each answer feeds. |
 | **AI Draft** | Retrieval-augmented generation over an embedded SEBI ICDR / Schedule VI / SME Chapter IX knowledge base drafts sections (Risk Factors, Capital Structure, …) from the promoter's intake answers, with every clause cited inline. |
-| **Consistency Checker** | Parses numeric claims out of the drafted narrative, cross-references them against OCR-extracted financial statement line items, and flags variances beyond a configurable materiality threshold — plus cross-foot and structural sanity checks. |
+| **Consistency Checker** | Parses numeric claims out of the drafted narrative, cross-references them against financial statement line items extracted from the uploaded PDF, and flags variances beyond a configurable materiality threshold — plus cross-foot and structural sanity checks. |
 | **Risk & Completeness Auditor** | Classifies each drafted risk factor as specific or boilerplate (rule-based phrase detection + LLM specificity scoring), and rolls up Schedule VI clause coverage, drafting completeness, risk specificity, and financial consistency into one audit report. |
 | **Scorecard & Handoff** | A 100-point completeness scorecard (20 points each across Intake, Drafting, Consistency, and Risk Audit, plus a Handoff-readiness score) with a prioritised HIGH/MEDIUM/LOW gap list, exportable as a merchant-banker handoff package in JSON or PDF. |
 
@@ -204,7 +204,7 @@ All endpoints except `/auth/signup` and `/auth/login` require a promoter session
 | POST | `/companies` | Create a new mandate |
 | GET / POST | `/intake` | Get / submit guided intake answers for a company |
 | GET | `/financials` | List extracted financial line items for a company |
-| POST | `/upload-financials` | Upload a financial statement PDF for OCR extraction |
+| POST | `/upload-financials` | Upload a financial statement PDF for line-item extraction (native text-layer PDFs only — no OCR yet) |
 | POST | `/drafting/generate` | Generate (or re-generate) a drafted section |
 | GET | `/drafting/sections` | List all drafted sections for a company |
 | GET | `/drafting/clauses` | Query the embedded regulation knowledge base directly |
