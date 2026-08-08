@@ -1,7 +1,7 @@
 import re
 from typing import List, Optional
 
-import fitz  # PyMuPDF
+import fitz 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,10 +21,7 @@ router = APIRouter()
 
 
 def _get_owned_company(company_id: str, current: Promoter, db: Session) -> Company:
-    """Fetch a company and verify it belongs to the authenticated promoter.
-    Every endpoint below takes a bare company_id — without this check, any
-    logged-in promoter could read or overwrite another promoter's intake
-    answers and uploaded financials just by knowing/guessing their company_id."""
+    
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
@@ -65,11 +62,7 @@ def get_intake(
     current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    """Returns whatever has already been saved for this company, keyed by
-    field_key, so the frontend can pre-fill the guided-intake form on load
-    instead of always rendering blank. Without this, POST /intake was
-    write-only — reopening a mandate showed every field as INCOMPLETE even
-    when the data was sitting in the database."""
+    
     _get_owned_company(company_id, current, db)
 
     rows = (
@@ -148,13 +141,38 @@ def _parse_number(raw: str) -> Optional[float]:
     return -value if negative else value
 
 
+_PERIOD_PATTERNS = [
+    re.compile(r"\bFY\s?(\d{2})\s?[-–]\s?(\d{2})\b", re.IGNORECASE), 
+    re.compile(r"\bFY\s?'?(\d{2,4})\b", re.IGNORECASE),  
+    re.compile(r"\bF\.?Y\.?\s?(\d{4})\s?[-–]\s?(\d{2,4})\b", re.IGNORECASE),
+    re.compile(
+        r"year ended\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+)?March,?\s+(\d{4})", re.IGNORECASE
+    ),  
+    re.compile(r"\b(\d{4})\s?[-–]\s?(\d{2})\b"),  
+]
+
+
+def _detect_period(page_text: str) -> Optional[str]:
+    
+    for pattern in _PERIOD_PATTERNS:
+        match = pattern.search(page_text)
+        if not match:
+            continue
+        groups = match.groups()
+        if len(groups) == 2 and groups[1]:
+            return f"FY{groups[0]}-{groups[1]}"
+        return f"FY{groups[0]}"
+    return None
+
+
 def _extract_line_items(pdf_bytes: bytes):
-    """Try native table extraction first, then fall back to regex over text lines."""
+    
     items = []
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
 
     try:
         for page in doc:
+            page_period = _detect_period(page.get_text())
             tables = page.find_tables()
             for table in tables.tables:
                 data = table.extract()
@@ -171,7 +189,7 @@ def _extract_line_items(pdf_bytes: bytes):
                                 {
                                     "label": label,
                                     "value": value,
-                                    "period": None,
+                                    "period": page_period,
                                     "raw_row": row,
                                 }
                             )
@@ -182,6 +200,7 @@ def _extract_line_items(pdf_bytes: bytes):
 
     if not items:
         for page in doc:
+            page_period = _detect_period(page.get_text())
             for raw_line in page.get_text().splitlines():
                 match = LINE_ITEM_RE.match(raw_line.strip())
                 if not match:
@@ -193,7 +212,7 @@ def _extract_line_items(pdf_bytes: bytes):
                     {
                         "label": match.group("label").strip(),
                         "value": value,
-                        "period": None,
+                        "period": page_period,
                         "raw_row": [raw_line.strip()],
                     }
                 )
@@ -221,10 +240,7 @@ def get_financials(
     current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    """Returns the most recently uploaded financial document (and its
-    extracted line items) for this company, so the frontend can restore the
-    extraction results panel on load instead of showing it blank after
-    every navigation — the same gap /intake had before it got a GET route."""
+    
     _get_owned_company(company_id, current, db)
 
     document = (
@@ -273,9 +289,17 @@ async def upload_financials(
     except Exception as exc:  # malformed PDF, etc.
         raise HTTPException(status_code=422, detail=f"Couldn't parse PDF: {exc}") from exc
 
+    
+    old_documents = db.query(FinancialDocument).filter(FinancialDocument.company_id == company.id).all()
+    for old_doc in old_documents:
+        db.query(ExtractedFinancialLineItem).filter(
+            ExtractedFinancialLineItem.document_id == old_doc.id
+        ).delete(synchronize_session=False)
+        db.delete(old_doc)
+
     document = FinancialDocument(company_id=company.id, filename=file.filename)
     db.add(document)
-    db.flush()  # get document.id before inserting line items
+    db.flush()  
 
     line_items_out = []
     for item in extracted:
@@ -293,9 +317,18 @@ async def upload_financials(
 
     db.commit()
 
-    return {
+    response = {
         "document_id": document.id,
         "filename": document.filename,
         "company_id": company.id,
         "line_items": line_items_out,
     }
+    if not line_items_out:
+        
+        response["warning"] = (
+            "No line items could be extracted from this PDF. This tool reads native, "
+            "text-layer PDFs — if this file is a scanned document or an image-based "
+            "export, its text isn't machine-readable and won't extract. Try a PDF "
+            "exported directly from accounting software rather than a scan."
+        )
+    return response

@@ -3,6 +3,7 @@ import bcrypt
 from database import Base, SessionLocal, engine
 import models
 from models import (
+    BankerAccess,
     Company,
     DraftSection,
     ExtractedFinancialLineItem,
@@ -122,6 +123,27 @@ def get_or_create_company(db) -> Company:
     return company
 
 
+def get_or_create_banker(db) -> Promoter:
+    """Demo merchant banker account (Gap Analysis 2.6) — lets the banker
+    review flow be tested end to end without manually creating an account
+    and sharing a mandate by hand every time."""
+    existing = db.query(Promoter).filter(Promoter.email == "priya.mehta@iitgoa-advisory.example").first()
+    if existing:
+        return existing
+
+    hashed = bcrypt.hashpw(b"bankerpassword", bcrypt.gensalt()).decode()
+    banker = Promoter(
+        full_name="Priya Mehta",
+        email="priya.mehta@iitgoa-advisory.example",
+        hashed_password=hashed,
+        merchant_banking_firm="IIT Goa Merchant Advisory",
+        role="banker",
+    )
+    db.add(banker)
+    db.flush()
+    return banker
+
+
 def seed_intake(db, company: Company):
     saved = 0
     for field_key, response_text in INTAKE_ANSWERS.items():
@@ -201,8 +223,22 @@ def run():
         seed_intake(db, company)
         seed_drafts(db, company)
         seed_financials(db, company)
+
+        banker = get_or_create_banker(db)
+        existing_grant = (
+            db.query(BankerAccess)
+            .filter(BankerAccess.company_id == company.id, BankerAccess.banker_id == banker.id)
+            .first()
+        )
+        if not existing_grant:
+            db.add(BankerAccess(company_id=company.id, banker_id=banker.id))
+            print(f"  Shared mandate with demo banker ({banker.email}).")
+        else:
+            print("  Mandate already shared with demo banker.")
+
         db.commit()
         print(f"\nDone. Demo company_id: {company.id}")
+        print(f"Demo banker login: {banker.email} / bankerpassword")
     finally:
         db.close()
 

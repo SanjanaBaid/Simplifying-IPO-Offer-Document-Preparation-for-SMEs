@@ -1,30 +1,7 @@
-"""
-Drafting Engine API (Phase 2, Step 7).
 
-Retrieves relevant Schedule VI / ICDR clauses from the ChromaDB knowledge base
-built by ingest.py, combines them with a company's intake answers (and, for
-Capital Structure, its extracted financial line items), and drafts offer
-document sections via an LLM. Each generated section is saved as a new
-DraftSection version, tagged with the Schedule VI clause(s) it was grounded in.
-
-Endpoints:
-    GET  /drafting/clauses    — raw clause retrieval for a section (debugging /
-                                 letting the UI preview what will be cited)
-    POST /drafting/generate   — full generate-and-save pipeline for a section
-
-Wire into main.py:
-    from drafting import router as drafting_router
-    app.include_router(drafting_router)
-
-Requires the knowledge base to already be ingested (see ingest.py) and, to
-actually call the LLM, a GROQ_API_KEY in the environment (free tier, no card
-required — https://console.groq.com/keys). Without a key set,
-/drafting/generate still runs end-to-end but returns a clearly-marked stub
-draft, so Step 8 (Drafting UI) can be built and tested against this endpoint
-without needing real credentials.
-"""
 
 import os
+import re
 from typing import Dict, List, Literal, Optional
 
 import chromadb
@@ -47,9 +24,7 @@ from models import (
 
 router = APIRouter(prefix="/drafting", tags=["drafting"])
 
-# ---------------------------------------------------------------------------
-# ChromaDB access — same persist dir / collection name as ingest.py
-# ---------------------------------------------------------------------------
+
 
 CHROMA_PERSIST_DIR = "./chroma_store"
 COLLECTION_NAME = "sebi_icdr_schedule_vi"
@@ -103,11 +78,7 @@ def retrieve_clauses(query: str, top_k: int = 5) -> List[Dict]:
     return clauses
 
 
-# ---------------------------------------------------------------------------
-# Section registry — maps a section request to its retrieval query, the
-# intake fields it draws on, and (for Capital Structure) which extracted
-# financial line items are relevant.
-# ---------------------------------------------------------------------------
+
 
 SectionKey = Literal[
     "general_information",
@@ -263,10 +234,6 @@ def _gather_financial_line_items(db: Session, company_id: str, labels: List[str]
     return matches
 
 
-# ---------------------------------------------------------------------------
-# Prompt templates
-# ---------------------------------------------------------------------------
-
 _COMMON_SYSTEM_PROMPT = """You are a drafting assistant for SME IPO offer documents, working under \
 SEBI ICDR Regulations (Schedule VI / SME Chapter IX). You draft offer-document sections that:
 - Are grounded ONLY in the regulatory clauses provided and the promoter's own intake answers.
@@ -347,6 +314,37 @@ Instructions:
 5. If an intake answer is "(not provided)", write "[NEEDS PROMOTER INPUT: <what's missing>]" instead of \
 guessing at figures or a schedule.
 """
+
+
+
+_MONEY_PCT_RE = re.compile(r"(?:₹|Rs\.?|INR)\s?[\d,]+(?:\.\d+)?|\d+(?:\.\d+)?\s?%")
+_MAGNITUDE_RE = re.compile(r"[\d,]+(?:\.\d+)?")
+
+
+def _risk_paragraph_sort_key(paragraph: str):
+    needs_input = paragraph.strip().upper().startswith("[NEEDS PROMOTER INPUT")
+    matches = _MONEY_PCT_RE.findall(paragraph)
+    magnitude = 0.0
+    for m in matches:
+        digits = _MAGNITUDE_RE.search(m)
+        if digits:
+            try:
+                magnitude = max(magnitude, float(digits.group().replace(",", "")))
+            except ValueError:
+                pass
+    is_quantified = bool(matches)
+    return (needs_input, not is_quantified, -magnitude)
+
+
+def rank_risk_factors_by_materiality(content: str) -> str:
+    
+    if not content:
+        return content
+    paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
+    if len(paragraphs) <= 1:
+        return content
+    ranked = sorted(paragraphs, key=_risk_paragraph_sort_key)
+    return "\n\n".join(ranked)
 
 
 def build_risk_factors_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
@@ -459,27 +457,12 @@ SECTION_PROMPT_BUILDERS = {
 }
 
 
-# ---------------------------------------------------------------------------
-# LLM call
-# ---------------------------------------------------------------------------
 
-# Groq's free tier hosts fast, hosted open-weight models (Llama, etc.) behind
-# an OpenAI-compatible chat completions API — no card required to get a key.
 DRAFTING_LLM_MODEL = os.getenv("DRAFTING_LLM_MODEL", "llama-3.3-70b-versatile")
 
 
 def call_llm(user_prompt: str) -> str:
-    """Call the configured LLM. Falls back to a labeled stub if no API key is set,
-    so the endpoint stays testable in /docs without credentials.
-
-    The stub is deliberately short and generic rather than the raw prompt
-    dumped back verbatim: the raw prompt (system instructions, retrieved
-    clause text, field dumps) used to get returned as "draft content", which
-    leaked internal prompt engineering into the Drafting page and — because
-    score_risk_audit() in handoff.py splits draft content into paragraphs
-    and classifies each one — shredded that prompt into a dozen garbled
-    "risk factor" fragments, cascading into a near-random Risk Audit score
-    instead of a clean, honestly-low "nothing generated yet" state."""
+    
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return (
@@ -488,8 +471,7 @@ def call_llm(user_prompt: str) -> str:
             "regenerate this section.]"
         )
 
-    from groq import Groq  # imported lazily so the package is only required when a key is set
-
+    from groq import Groq 
     client = Groq(api_key=api_key, timeout=20.0)
     response = client.chat.completions.create(
         model=DRAFTING_LLM_MODEL,
@@ -502,9 +484,6 @@ def call_llm(user_prompt: str) -> str:
     return response.choices[0].message.content
 
 
-# ---------------------------------------------------------------------------
-# Schemas
-# ---------------------------------------------------------------------------
 
 
 class ClauseOut(BaseModel):
@@ -548,9 +527,6 @@ class DraftEditIn(BaseModel):
     content: str
 
 
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
 
 
 @router.get("/clauses", response_model=ClausesQueryOut)
@@ -568,10 +544,7 @@ def list_latest_sections(
     current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    """Return the latest saved version of every drafted section for a company,
-    without calling the LLM or bumping the version — used to restore the
-    Drafting page's state on mount instead of showing it blank until the
-    user clicks 'Generate' again."""
+    
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {company_id}")
@@ -618,7 +591,7 @@ def generate_draft_section(
     current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    """Retrieve clauses + intake answers for a section, draft it via the LLM, and save a new version."""
+    
     company = db.query(Company).filter(Company.id == payload.company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {payload.company_id}")
@@ -640,6 +613,9 @@ def generate_draft_section(
         prompt = builder(clauses, intake_answers, company.name)
 
     draft_text = call_llm(prompt)
+
+    if payload.section == "risk_factors":
+        draft_text = rank_risk_factors_by_materiality(draft_text)
 
     clause_citation = ", ".join(sorted({c["clause_number"] for c in clauses})) or None
 
@@ -683,11 +659,7 @@ def edit_draft_section(
     current: Promoter = Depends(get_current_promoter),
     db: Session = Depends(get_db),
 ):
-    """Save a promoter's hand-edited version of a section without calling the
-    LLM. A draft must already exist for the section (generate one first) —
-    editing saves a new version on top of it and carries forward its clause
-    citations, since rewording a paragraph doesn't change which Schedule VI
-    clauses it's meant to satisfy."""
+    
     company = db.query(Company).filter(Company.id == payload.company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail=f"Unknown company_id: {payload.company_id}")

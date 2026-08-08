@@ -29,9 +29,11 @@ class Promoter(Base):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     merchant_banking_firm = Column(String, nullable=True)
+    
+    role = Column(String, default="promoter", nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    companies = relationship("Company", back_populates="promoter")
+    companies = relationship("Company", back_populates="promoter", foreign_keys="Company.promoter_id")
 
 
 class Session(Base):
@@ -58,10 +60,29 @@ class Company(Base):
     completeness_score = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    promoter = relationship("Promoter", back_populates="companies")
+    review_status = Column(String, default="not_reviewed", nullable=False)
+    banker_review_comment = Column(Text, nullable=True)
+    reviewed_by_banker_id = Column(String, ForeignKey("promoters.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+
+    promoter = relationship("Promoter", back_populates="companies", foreign_keys=[promoter_id])
     intake_sessions = relationship("IntakeSession", back_populates="company")
     financial_documents = relationship("FinancialDocument", back_populates="company")
     draft_sections = relationship("DraftSection", back_populates="company")
+
+
+class BankerAccess(Base):
+    
+
+    __tablename__ = "banker_access"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    company_id = Column(String, ForeignKey("companies.id"), nullable=False)
+    banker_id = Column(String, ForeignKey("promoters.id"), nullable=False)
+    granted_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    company = relationship("Company")
+    banker = relationship("Promoter", foreign_keys=[banker_id])
 
 
 class ScheduleVIField(Base):
@@ -124,10 +145,7 @@ class DraftSection(Base):
     content = Column(Text, nullable=True)
     schedule_vi_clause = Column(String, nullable=True)
     version = Column(Integer, default=1)
-    # True when this version was hand-edited by the promoter rather than
-    # produced by generate_draft_section's LLM call. Lets the frontend show
-    # "edited by you" instead of implying every version is AI-authored, and
-    # gives the merchant-banker handoff a real human-in-the-loop signal.
+   
     is_manual_edit = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -135,9 +153,7 @@ class DraftSection(Base):
 
 
 class RiskClassification(Base):
-    """Persists the most recent risk-factor classification run for a company,
-    so the Drafting page can reload it on revisit instead of losing it when
-    the component unmounts (it previously lived only in React state)."""
+
 
     __tablename__ = "risk_classifications"
 

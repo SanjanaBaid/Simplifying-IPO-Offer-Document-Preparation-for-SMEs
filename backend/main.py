@@ -14,6 +14,7 @@ from consistency import router as consistency_router
 from handoff import router as handoff_router
 from audit import router as audit_router
 from auth import router as auth_router
+from banker import router as banker_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -34,6 +35,7 @@ app.include_router(consistency_router)
 app.include_router(handoff_router)
 app.include_router(audit_router)
 app.include_router(auth_router)
+app.include_router(banker_router)
 
 @app.get("/")
 def root():

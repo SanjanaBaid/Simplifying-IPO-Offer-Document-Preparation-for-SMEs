@@ -19,6 +19,7 @@ class SignupIn(BaseModel):
     email: EmailStr
     password: str
     merchant_banking_firm: str | None = None
+    role: str = "promoter"  
 
 
 class LoginIn(BaseModel):
@@ -31,6 +32,7 @@ class PromoterOut(BaseModel):
     full_name: str
     email: str
     merchant_banking_firm: str | None = None
+    role: str = "promoter"
 
 
 class AuthOut(BaseModel):
@@ -50,15 +52,13 @@ def _verify_password(raw: str, hashed: str) -> bool:
 
 
 def _promoter_out(p: Promoter) -> PromoterOut:
-    # Built from named attributes, not p.__dict__ — a commit elsewhere in the
-    # same request (e.g. _issue_session's session insert) expires already
-    # loaded attributes, and __dict__ skips the lazy-reload that individual
-    # attribute access triggers, coming back with just _sa_instance_state.
+   
     return PromoterOut(
         id=p.id,
         full_name=p.full_name,
         email=p.email,
         merchant_banking_firm=p.merchant_banking_firm,
+        role=p.role,
     )
 
 
@@ -98,11 +98,13 @@ def signup(payload: SignupIn, db: DbSession = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
 
+    role = payload.role if payload.role in ("promoter", "banker") else "promoter"
     promoter = Promoter(
         full_name=payload.full_name.strip(),
         email=payload.email.lower(),
         hashed_password=_hash_password(payload.password),
         merchant_banking_firm=payload.merchant_banking_firm,
+        role=role,
     )
     db.add(promoter)
     db.commit()
@@ -167,12 +169,26 @@ def _mandate_out(c: Company) -> MandateOut:
 
 @router.get("/companies", response_model=list[MandateOut])
 def list_mandates(current: Promoter = Depends(get_current_promoter), db: DbSession = Depends(get_db)):
+   
+    from handoff import compute_scorecard
+
     companies = (
         db.query(Company)
         .filter(Company.promoter_id == current.id)
         .order_by(Company.created_at.desc())
         .all()
     )
+
+   
+    for c in companies:
+        try:
+            result = compute_scorecard(db, c)
+            c.completeness_score = result["total_score"]
+        except Exception:
+           
+            pass
+    db.commit()
+
     return [_mandate_out(c) for c in companies]
 
 
