@@ -11,6 +11,8 @@ const SECTIONS = [
   { key: "objects_of_issue", label: "Objects of the Issue" },
   { key: "risk_factors", label: "Risk Factors" },
   { key: "capital_structure", label: "Capital Structure" },
+  { key: "management_kmp", label: "Management & Key Managerial Personnel" },
+  { key: "statutory_approvals_borrowings", label: "Statutory Approvals & Borrowings" },
 ];
 
 export default function Drafting() {

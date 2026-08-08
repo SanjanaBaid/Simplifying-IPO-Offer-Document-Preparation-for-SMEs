@@ -276,6 +276,77 @@ export const SECTIONS = [
       },
     ],
   },
+  {
+    section_name: "Management & Key Managerial Personnel",
+    section_key: "management-kmp",
+    intro: "Who runs the company day to day, and how the leadership team has changed.",
+    fields: [
+      {
+        field_key: "board_composition",
+        clause_number: "Sch. VI, Part A, Cl. 4(i)",
+        plain_language_prompt: "Who are the company's directors? List each director's name, designation, and whether they are a promoter.",
+        field_type: "textarea",
+        placeholder: "e.g. Rakesh Deshmukh — Managing Director (Promoter); Anjali Rao — Independent Director",
+        validate: compose(required("Board composition"), minLength(20)),
+      },
+      {
+        field_key: "key_managerial_personnel",
+        clause_number: "Sch. VI, Part A, Cl. 4(ii)",
+        plain_language_prompt: "Who are the company's key managerial personnel (CFO, Company Secretary, other senior leadership)? Include designation and relevant experience.",
+        field_type: "textarea",
+        validate: compose(required("Key managerial personnel"), minLength(20)),
+      },
+      {
+        field_key: "director_relationships",
+        clause_number: "Sch. VI, Part A, Cl. 4(iii)",
+        plain_language_prompt: "Are any directors related to each other or to the promoter (spouse, sibling, parent-child, etc.)? Write \"None\" if not applicable.",
+        field_type: "textarea",
+        validate: compose(required("Director relationships")),
+      },
+      {
+        field_key: "management_changes_last_3_years",
+        clause_number: "Sch. VI, Part A, Cl. 4(iv)",
+        plain_language_prompt: "Have there been any changes to the board or key managerial personnel in the last 3 years? Write \"None\" if not applicable.",
+        field_type: "textarea",
+        validate: compose(required("Management changes")),
+      },
+    ],
+  },
+  {
+    section_name: "Statutory Approvals & Borrowings",
+    section_key: "approvals-borrowings",
+    intro: "The licenses that let the company operate, and what it currently owes.",
+    fields: [
+      {
+        field_key: "material_licenses_approvals",
+        clause_number: "Sch. VI, Part A, Cl. 15(i)",
+        plain_language_prompt: "What material licenses, registrations, or approvals does the company hold to run its business (e.g. GST registration, factory license, industry-specific permits)?",
+        field_type: "textarea",
+        validate: compose(required("Material licenses & approvals"), minLength(20)),
+      },
+      {
+        field_key: "pending_regulatory_approvals",
+        clause_number: "Sch. VI, Part A, Cl. 15(ii)",
+        plain_language_prompt: "Are there any licenses or approvals the company has applied for but not yet received? Write \"None\" if not applicable.",
+        field_type: "textarea",
+        validate: compose(required("Pending regulatory approvals")),
+      },
+      {
+        field_key: "outstanding_borrowings",
+        clause_number: "Sch. VI, Part A, Cl. 16(i)",
+        plain_language_prompt: "What are the company's outstanding borrowings — lender name, amount, and security offered (if any)? Write \"None\" if the company has no borrowings.",
+        field_type: "textarea",
+        validate: compose(required("Outstanding borrowings")),
+      },
+      {
+        field_key: "contingent_liabilities",
+        clause_number: "Sch. VI, Part A, Cl. 16(ii)",
+        plain_language_prompt: "Does the company have any contingent liabilities — guarantees given, disputed tax demands, unacknowledged claims? Write \"None\" if not applicable.",
+        field_type: "textarea",
+        validate: compose(required("Contingent liabilities")),
+      },
+    ],
+  },
 ];
 
 // Flat lookup, keyed by field_key — handy for validation and payload assembly.

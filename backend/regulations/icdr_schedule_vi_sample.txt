@@ -109,3 +109,43 @@ issuer, and shall reconcile any difference between authorised and paid-up capita
 The offer document shall present the build-up of the issuer's share capital in tabular form,
 showing the date of allotment, number of shares allotted, face value, issue price, and
 nature of consideration for each allotment since incorporation.
+
+[CLAUSE 4(i)]
+The offer document shall disclose the composition of the board of directors, stating for
+each director their name, designation, and whether they are a promoter, executive, or
+independent director.
+
+[CLAUSE 4(ii)]
+The offer document shall disclose the issuer's key managerial personnel, including the
+chief financial officer and company secretary, together with their designation and
+relevant experience.
+
+[CLAUSE 4(iii)]
+The offer document shall disclose any relationship, by blood or marriage, between any two
+directors or between a director and a promoter of the issuer, or shall affirmatively state
+that no such relationship exists.
+
+[CLAUSE 4(iv)]
+The offer document shall disclose any change in the composition of the board of directors
+or key managerial personnel during the three years preceding the offer document, stating
+the nature of and reason for each change.
+
+[CLAUSE 15(i)]
+The offer document shall list all material licenses, registrations, and statutory approvals
+held by the issuer that are necessary to carry on its business, together with their validity
+period where applicable.
+
+[CLAUSE 15(ii)]
+The offer document shall disclose any material license, registration, or approval applied
+for by the issuer that remains pending as at the date of the offer document, or shall
+affirmatively state that none is pending.
+
+[CLAUSE 16(i)]
+The offer document shall disclose the issuer's outstanding borrowings as at the date of the
+offer document, including the name of each lender, the amount outstanding, and the
+security (if any) offered against each borrowing.
+
+[CLAUSE 16(ii)]
+The offer document shall disclose all material contingent liabilities of the issuer,
+including guarantees given on behalf of third parties and disputed tax demands or claims
+not acknowledged as debt, or shall affirmatively state that none exist.

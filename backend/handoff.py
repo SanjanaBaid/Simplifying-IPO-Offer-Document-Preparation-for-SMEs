@@ -40,6 +40,8 @@ CORE_SECTIONS = [
     "Objects of the Issue",
     "Risk Factors",
     "Capital Structure",
+    "Management & Key Managerial Personnel",
+    "Statutory Approvals & Borrowings",
 ]
 
 PRIORITY_RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}

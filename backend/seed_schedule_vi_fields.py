@@ -1,4 +1,3 @@
-
 from database import Base, SessionLocal, engine
 import models  
 from models import ScheduleVIField
@@ -102,7 +101,48 @@ FIELDS = [
          section_name="Risk Factor Inputs",
          plain_language_prompt="Is the company, or any promoter/director, currently party to any litigation? Write \"None\" if not applicable.",
          field_type="textarea"),
+
+    # --- Management & Key Managerial Personnel -----------------------------
+    # Clause numbers below (4(i)-4(iv)) follow the same "Sch. VI, Part A"
+    # illustrative numbering the rest of this file already uses — like the
+    # rest of the seed set, validate against the primary ICDR Schedule VI
+    # text before relying on these for an actual filing.
+    dict(field_key="board_composition", clause_number="Sch. VI, Part A, Cl. 4(i)",
+         section_name="Management & Key Managerial Personnel",
+         plain_language_prompt="Who are the company's directors? List each director's name, designation (e.g. Managing Director, Independent Director), and whether they are a promoter.",
+         field_type="textarea"),
+    dict(field_key="key_managerial_personnel", clause_number="Sch. VI, Part A, Cl. 4(ii)",
+         section_name="Management & Key Managerial Personnel",
+         plain_language_prompt="Who are the company's key managerial personnel (CFO, Company Secretary, and other senior leadership below the board)? Include their designation and relevant experience.",
+         field_type="textarea"),
+    dict(field_key="director_relationships", clause_number="Sch. VI, Part A, Cl. 4(iii)",
+         section_name="Management & Key Managerial Personnel",
+         plain_language_prompt="Are any directors related to each other or to the promoter (spouse, sibling, parent-child, etc.)? Write \"None\" if not applicable.",
+         field_type="textarea"),
+    dict(field_key="management_changes_last_3_years", clause_number="Sch. VI, Part A, Cl. 4(iv)",
+         section_name="Management & Key Managerial Personnel",
+         plain_language_prompt="Have there been any changes to the board of directors or key managerial personnel in the last 3 years? Briefly describe who joined or left, and when.",
+         field_type="textarea"),
+
+    # --- Statutory Approvals & Borrowings ------------------------------------
+    dict(field_key="material_licenses_approvals", clause_number="Sch. VI, Part A, Cl. 15(i)",
+         section_name="Statutory Approvals & Borrowings",
+         plain_language_prompt="What material licenses, registrations, or approvals does the company currently hold to run its business (e.g. GST registration, factory license, industry-specific permits)?",
+         field_type="textarea"),
+    dict(field_key="pending_regulatory_approvals", clause_number="Sch. VI, Part A, Cl. 15(ii)",
+         section_name="Statutory Approvals & Borrowings",
+         plain_language_prompt="Are there any licenses or approvals the company has applied for but not yet received? Write \"None\" if not applicable.",
+         field_type="textarea"),
+    dict(field_key="outstanding_borrowings", clause_number="Sch. VI, Part A, Cl. 16(i)",
+         section_name="Statutory Approvals & Borrowings",
+         plain_language_prompt="What are the company's outstanding borrowings — lender name, amount, and security offered (if any)? Write \"None\" if the company has no borrowings.",
+         field_type="textarea"),
+    dict(field_key="contingent_liabilities", clause_number="Sch. VI, Part A, Cl. 16(ii)",
+         section_name="Statutory Approvals & Borrowings",
+         plain_language_prompt="Does the company have any contingent liabilities — guarantees given on behalf of others, disputed tax demands, pending claims not acknowledged as debt? Write \"None\" if not applicable.",
+         field_type="textarea"),
 ]
+
 
 
 def run():

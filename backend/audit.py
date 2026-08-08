@@ -26,6 +26,7 @@ Wire into main.py:
     app.include_router(audit_router)
 """
 
+import re
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -54,6 +55,21 @@ SECTION_ORDER = [
     "Financial Consistency",
     "Handoff Readiness",
 ]
+
+
+# ScheduleVIField.clause_number is stored in its full descriptive form, e.g.
+# "Sch. VI, Part A, Cl. 1(a)" or "Reg. 229, Sch. VI Cl. 9(iii)". The clause
+# ids that actually get cited on a draft (drafting.py's `schedule_vi_clause`,
+# sourced from ingest.py's [CLAUSE ...] markers) are just the short suffix,
+# e.g. "1(a)" or "9(iii)". A naive `field.clause_number in cited_blob` check
+# compares the long form against a blob of short forms and can never match —
+# extract the same short id from both sides before comparing.
+_CLAUSE_SHORT_ID_RE = re.compile(r"(\d+\([^)]+\)|[A-Z][A-Z0-9-]*\(\d+\))\s*$")
+
+
+def _clause_short_id(clause_number: str) -> str:
+    match = _CLAUSE_SHORT_ID_RE.search(clause_number)
+    return match.group(1) if match else clause_number
 
 
 def compute_clause_coverage(db: Session, company_id: str) -> Dict:
@@ -86,15 +102,23 @@ def compute_clause_coverage(db: Session, company_id: str) -> Dict:
     }
 
     latest_drafts = _latest_drafts_by_section(db, company_id)
-    cited_clause_blob = " | ".join(
-        draft.schedule_vi_clause for draft in latest_drafts.values() if draft.schedule_vi_clause
-    )
+    # Build an exact set of cited short clause ids rather than one blob string —
+    # a substring check here would false-positive, e.g. short id "1(a)" would
+    # match inside a cited "11(a)" even though those are different clauses.
+    cited_clause_ids = {
+        token.strip()
+        for draft in latest_drafts.values()
+        if draft.schedule_vi_clause
+        for token in draft.schedule_vi_clause.split(",")
+        if token.strip()
+    }
 
     gaps: List[Dict] = []
     cited_count = 0
     for field in fields:
         answered = field.field_key in answered_keys
-        cited = bool(cited_clause_blob) and field.clause_number in cited_clause_blob
+        short_id = _clause_short_id(field.clause_number)
+        cited = short_id in cited_clause_ids
         if cited:
             cited_count += 1
 

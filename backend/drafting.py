@@ -115,6 +115,8 @@ SectionKey = Literal[
     "objects_of_issue",
     "risk_factors",
     "capital_structure",
+    "management_kmp",
+    "statutory_approvals_borrowings",
 ]
 
 SECTION_CONFIG: Dict[str, Dict] = {
@@ -193,6 +195,35 @@ SECTION_CONFIG: Dict[str, Dict] = {
             "share capital",
             "equity share capital",
         ],
+    },
+    "management_kmp": {
+        "display_name": "Management & Key Managerial Personnel",
+        "retrieval_query": (
+            "board of directors key managerial personnel chief financial officer "
+            "company secretary director relationships management changes SME issuer disclosure"
+        ),
+        "intake_field_keys": [
+            "board_composition",
+            "key_managerial_personnel",
+            "director_relationships",
+            "management_changes_last_3_years",
+        ],
+        "financial_line_labels": [],
+    },
+    "statutory_approvals_borrowings": {
+        "display_name": "Statutory Approvals & Borrowings",
+        "retrieval_query": (
+            "material licenses registrations statutory approvals pending approvals "
+            "outstanding borrowings lenders security contingent liabilities guarantees "
+            "disputed tax demands SME issuer disclosure"
+        ),
+        "intake_field_keys": [
+            "material_licenses_approvals",
+            "pending_regulatory_approvals",
+            "outstanding_borrowings",
+            "contingent_liabilities",
+        ],
+        "financial_line_labels": [],
     },
 }
 
@@ -371,12 +402,60 @@ If a figure is missing, write "[NEEDS PROMOTER INPUT: <what's missing>]" instead
 """
 
 
+def build_management_kmp_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
+    return f"""Draft the "Management & Key Managerial Personnel" section of the offer document for {company_name}.
+
+RELEVANT SCHEDULE VI / ICDR CLAUSES:
+{_format_clauses(clauses)}
+
+MANAGEMENT PARTICULARS (from intake):
+{_format_intake(intake_answers)}
+
+Instructions:
+1. List the board of directors with each director's designation and whether they are a promoter, \
+executive, or independent director.
+2. List the key managerial personnel (e.g. CFO, Company Secretary) with their designation and \
+relevant experience.
+3. Disclose any relationship between directors or between a director and the promoter. If the intake \
+answer is "None", state plainly that no such relationship exists.
+4. Disclose any change to the board or key managerial personnel in the preceding three years.
+5. Cite the governing clause number in square brackets after each disclosure.
+6. If an intake answer is "(not provided)", write "[NEEDS PROMOTER INPUT: <what's missing>]" instead of \
+guessing at names, designations, or dates.
+"""
+
+
+def build_statutory_approvals_borrowings_prompt(clauses: List[Dict], intake_answers: Dict[str, Optional[str]], company_name: str) -> str:
+    return f"""Draft the "Statutory Approvals & Borrowings" section of the offer document for {company_name}.
+
+RELEVANT SCHEDULE VI / ICDR CLAUSES:
+{_format_clauses(clauses)}
+
+APPROVALS & BORROWINGS PARTICULARS (from intake):
+{_format_intake(intake_answers)}
+
+Instructions:
+1. List the material licenses, registrations, and statutory approvals the company currently holds.
+2. Disclose any license or approval applied for but not yet received. If the intake answer is "None", \
+state plainly that no approval is pending.
+3. State the company's outstanding borrowings — lender, amount, and security offered. If the intake \
+answer is "None", state plainly that the company has no outstanding borrowings.
+4. Disclose material contingent liabilities (guarantees given, disputed tax demands, unacknowledged \
+claims). If the intake answer is "None", state plainly that none exist.
+5. Cite the governing clause number in square brackets after each disclosure.
+6. If an intake answer is "(not provided)", write "[NEEDS PROMOTER INPUT: <what's missing>]" instead of \
+guessing at license names, amounts, or lenders.
+"""
+
+
 SECTION_PROMPT_BUILDERS = {
     "general_information": build_general_information_prompt,
     "business_overview": build_business_overview_prompt,
     "objects_of_issue": build_objects_of_issue_prompt,
     "risk_factors": build_risk_factors_prompt,
     "capital_structure": build_capital_structure_prompt,
+    "management_kmp": build_management_kmp_prompt,
+    "statutory_approvals_borrowings": build_statutory_approvals_borrowings_prompt,
 }
 
 
