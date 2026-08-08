@@ -88,8 +88,7 @@ export default function Handoff() {
         );
       }
 
-      // A successful export recomputes the score server-side too — refresh so
-      // the on-screen scorecard matches what just got packaged.
+      
       const { data } = await apiClient.get(
         `/handoff/scorecard?company_id=${encodeURIComponent(companyId)}`
       );
@@ -108,6 +107,35 @@ export default function Handoff() {
   (scorecard?.gap_list || []).forEach((g) => {
     (gapsByPriority[g.priority] || gapsByPriority.LOW).push(g);
   });
+
+  const [bankerEmail, setBankerEmail] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const [shareMsg, setShareMsg] = useState("");
+
+  async function handleShareWithBanker(e) {
+    e.preventDefault();
+    if (!companyId) {
+      setShareMsg("Load a company first.");
+      return;
+    }
+    setSharing(true);
+    setShareMsg("");
+    try {
+      const { data } = await apiClient.post(`/companies/${companyId}/share-with-banker`, {
+        banker_email: bankerEmail,
+      });
+      setShareMsg(
+        data.already_shared
+          ? `Already shared with ${data.banker_email}.`
+          : `Shared with ${data.banker_email}.`
+      );
+      setBankerEmail("");
+    } catch (err) {
+      setShareMsg(err.response?.data?.detail || "Couldn't share this mandate.");
+    } finally {
+      setSharing(false);
+    }
+  }
 
   return (
     <PageShell
@@ -209,6 +237,30 @@ export default function Handoff() {
           always recomputes the score first.
         </p>
       )}
+
+      <form className="mock-card" onSubmit={handleShareWithBanker} style={{ marginTop: "1.5rem" }}>
+        <h3>Share with a merchant banker</h3>
+        <p style={{ marginBottom: "1rem" }}>
+          Give a merchant banker read-only access to this mandate's drafts and scorecard, so they
+          can review and approve it themselves instead of you emailing an export around. They need
+          a Sherpa account signed up with the "Merchant Banker" role first.
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-start" }}>
+          <input
+            type="email"
+            className="intake-input"
+            placeholder="banker@merchantbank.com"
+            value={bankerEmail}
+            onChange={(e) => setBankerEmail(e.target.value)}
+            required
+            style={{ flex: 1, minWidth: "220px" }}
+          />
+          <button type="submit" className="btn-primary" disabled={sharing}>
+            {sharing ? "Sharing…" : "Share mandate"}
+          </button>
+        </div>
+        {shareMsg && <p className="field-error" style={{ marginTop: "0.75rem" }}>{shareMsg}</p>}
+      </form>
     </PageShell>
   );
 }

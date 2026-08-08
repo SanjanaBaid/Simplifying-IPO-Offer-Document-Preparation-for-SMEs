@@ -32,12 +32,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signup = useCallback(
-    async ({ fullName, email, password, merchantBankingFirm }) => {
+    async ({ fullName, email, password, merchantBankingFirm, role }) => {
       const { data } = await apiClient.post("/auth/signup", {
         full_name: fullName,
         email,
         password,
         merchant_banking_firm: merchantBankingFirm || null,
+        role: role || "promoter",
       });
       persistSession(data.token, data.promoter);
       return data.promoter;
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch {
-      // Session may already be gone server-side — clear locally regardless.
+     
     }
     window.localStorage.removeItem(TOKEN_KEY);
     setToken("");

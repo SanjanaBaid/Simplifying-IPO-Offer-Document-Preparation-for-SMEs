@@ -13,6 +13,7 @@ const MODULES = [
 export default function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const [role, setRole] = useState("promoter");
   const [fullName, setFullName] = useState("");
   const [firm, setFirm] = useState("");
   const [email, setEmail] = useState("");
@@ -25,8 +26,8 @@ export default function Signup() {
     setError("");
     setSubmitting(true);
     try {
-      await signup({ fullName, email, password, merchantBankingFirm: firm });
-      navigate("/dashboard");
+      await signup({ fullName, email, password, merchantBankingFirm: firm, role });
+      navigate(role === "banker" ? "/banker/dashboard" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Couldn't create your account — try again.");
     } finally {
@@ -68,6 +69,24 @@ export default function Signup() {
           <h1 className="auth-title">Create your account</h1>
 
           <form onSubmit={handleSubmit} className="auth-form">
+            <label className="auth-label" htmlFor="role">I am a</label>
+            <div className="auth-role-toggle">
+              <button
+                type="button"
+                className={`auth-role-option ${role === "promoter" ? "active" : ""}`}
+                onClick={() => setRole("promoter")}
+              >
+                Promoter
+              </button>
+              <button
+                type="button"
+                className={`auth-role-option ${role === "banker" ? "active" : ""}`}
+                onClick={() => setRole("banker")}
+              >
+                Merchant Banker
+              </button>
+            </div>
+
             <label className="auth-label" htmlFor="fullName">Full name</label>
             <input
               id="fullName"

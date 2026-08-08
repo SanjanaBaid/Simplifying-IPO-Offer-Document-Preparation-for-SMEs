@@ -23,8 +23,8 @@ export default function Login() {
     setError("");
     setSubmitting(true);
     try {
-      await login({ email, password });
-      navigate("/dashboard");
+      const loggedInPromoter = await login({ email, password });
+      navigate(loggedInPromoter.role === "banker" ? "/banker/dashboard" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Couldn't sign in — check your email and password.");
     } finally {

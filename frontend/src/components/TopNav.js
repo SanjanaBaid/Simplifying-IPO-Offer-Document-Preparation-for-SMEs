@@ -22,7 +22,7 @@ export default function TopNav() {
   return (
     <header className="top-nav">
       <div className="top-nav-row">
-        <NavLink to="/dashboard" className="top-nav-brand">
+        <NavLink to={promoter?.role === "banker" ? "/banker/dashboard" : "/dashboard"} className="top-nav-brand">
           <span className="mark">Sherpa</span>
           <span className="tag">Drafting copilot · SME DRHP</span>
         </NavLink>
@@ -30,7 +30,10 @@ export default function TopNav() {
         {promoter && (
           <div className="top-nav-user">
             <div className="top-nav-user-info">
-              <span className="top-nav-user-name">{promoter.full_name}</span>
+              <span className="top-nav-user-name">
+                {promoter.full_name}
+                {promoter.role === "banker" && <span className="top-nav-role-badge">Banker</span>}
+              </span>
               {promoter.merchant_banking_firm && (
                 <span className="top-nav-user-firm">{promoter.merchant_banking_firm}</span>
               )}
@@ -42,7 +45,7 @@ export default function TopNav() {
         )}
       </div>
 
-      {companyId && (
+      {promoter?.role === "promoter" && companyId && (
         <nav className="top-nav-tabs">
           {MODULES.map((m) => (
             <NavLink

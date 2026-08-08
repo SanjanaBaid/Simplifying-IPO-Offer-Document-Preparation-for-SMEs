@@ -44,7 +44,7 @@ body {
   min-height: 100vh;
 }
 
-/* ---------- Top nav ---------- */
+
 
 .top-nav {
   background: var(--navy);
@@ -150,7 +150,6 @@ body {
   width: 100%;
 }
 
-/* ---------- Main pane ---------- */
 
 .main-pane {
   display: flex;
@@ -206,7 +205,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px 20px;
-  min-width: 0; /* let grid items shrink below content size instead of forcing overflow */
+  min-width: 0; 
   overflow-wrap: anywhere;
 }
 
@@ -264,7 +263,7 @@ body {
   padding-left: 12px;
 }
 
-/* ---------- Step 4/6 — guided intake questionnaire ---------- */
+
 
 .btn-primary,
 .btn-ghost {
@@ -535,7 +534,6 @@ textarea.intake-input { resize: vertical; }
   max-height: 320px;
 }
 
-/* ---------- Step 6 — company id bar ---------- */
 
 .company-bar {
   display: flex;
@@ -578,7 +576,7 @@ textarea.intake-input { resize: vertical; }
   color: var(--text-muted);
 }
 
-/* ---------- Step 6 — financial document upload ---------- */
+
 
 .financial-upload {
   margin-top: 28px;
@@ -661,7 +659,7 @@ textarea.intake-input { resize: vertical; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-/* ---------- Auth screens (Login / Signup) ---------- */
+
 
 .auth-screen {
   min-height: 100vh;
@@ -850,7 +848,6 @@ textarea.intake-input { resize: vertical; }
   font-size: 13px;
 }
 
-/* ---------- Dashboard ---------- */
 
 .dash-page {
   max-width: 1440px;
@@ -946,7 +943,6 @@ textarea.intake-input { resize: vertical; }
   margin-left: 2px;
 }
 
-/* ---------- Landing page ---------- */
 
 .landing {
   min-height: 100vh;
@@ -1099,4 +1095,50 @@ textarea.intake-input { resize: vertical; }
   .landing-hero {
     grid-template-columns: 1fr;
   }
+}
+
+
+.auth-role-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.auth-role-option {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-role-option:hover {
+  border-color: var(--amber);
+}
+
+.auth-role-option.active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #ffffff;
+}
+
+
+
+.top-nav-role-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--amber-dim);
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
