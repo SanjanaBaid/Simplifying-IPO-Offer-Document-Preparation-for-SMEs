@@ -470,12 +470,22 @@ DRAFTING_LLM_MODEL = os.getenv("DRAFTING_LLM_MODEL", "llama-3.3-70b-versatile")
 
 def call_llm(user_prompt: str) -> str:
     """Call the configured LLM. Falls back to a labeled stub if no API key is set,
-    so the endpoint stays testable in /docs without credentials."""
+    so the endpoint stays testable in /docs without credentials.
+
+    The stub is deliberately short and generic rather than the raw prompt
+    dumped back verbatim: the raw prompt (system instructions, retrieved
+    clause text, field dumps) used to get returned as "draft content", which
+    leaked internal prompt engineering into the Drafting page and — because
+    score_risk_audit() in handoff.py splits draft content into paragraphs
+    and classifies each one — shredded that prompt into a dozen garbled
+    "risk factor" fragments, cascading into a near-random Risk Audit score
+    instead of a clean, honestly-low "nothing generated yet" state."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return (
-            "[STUB DRAFT — set GROQ_API_KEY to generate a real draft]\n\n"
-            + user_prompt
+            "[STUB DRAFT — GROQ_API_KEY is not set, so no LLM call was made. "
+            "This is placeholder text, not a real draft; set GROQ_API_KEY and "
+            "regenerate this section.]"
         )
 
     from groq import Groq  # imported lazily so the package is only required when a key is set

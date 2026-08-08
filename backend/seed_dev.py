@@ -1,11 +1,16 @@
-
 import bcrypt
 
 from database import Base, SessionLocal, engine
 import models  # noqa: F401 — ensure models are registered before create_all
 from models import Company, Promoter
+import seed_schedule_vi_fields
 
 Base.metadata.create_all(bind=engine)
+
+# Without this call, a fresh dev DB has 0 ScheduleVIFields, so /intake (and
+# every downstream module that reads from it) renders empty until someone
+# separately remembers to run seed_schedule_vi_fields.py by hand.
+seed_schedule_vi_fields.run()
 
 db = SessionLocal()
 try:

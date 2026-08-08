@@ -99,9 +99,26 @@ def relative_variance_pct(claimed: float, actual: float) -> float:
 
 
 
+_STOPWORDS = {"total", "of", "the", "and", "for", "as", "per", "on", "at", "in", "to"}
+
+
+def _label_keywords(label: Optional[str]) -> set:
+    """Meaningful words from a line-item label, for matching a total to its
+    plausible components. e.g. "Total Revenue" -> {"revenue"}."""
+    if not label:
+        return set()
+    return {w for w in re.findall(r"[a-zA-Z]+", label.lower()) if w not in _STOPWORDS and len(w) > 2}
+
+
 def run_crossfoot_checks(line_items: List[ExtractedFinancialLineItem], threshold_pct: float) -> List[Dict]:
     """Group line items by period; where a label reads as a 'total', verify
-    it sums its non-total siblings from the same period."""
+    it sums its non-total siblings from the same period that plausibly
+    belong to it (matched by shared keywords with the total's own label,
+    e.g. "Total Revenue" only pulls in items that also mention "revenue").
+    Without that keyword match, every non-total line item in the period —
+    including unrelated ones like Authorized Capital or a shareholding
+    percentage — would get summed into every total, producing nonsense
+    variances on data that was never meant to foot together."""
     by_period: Dict[Optional[str], List[ExtractedFinancialLineItem]] = {}
     for item in line_items:
         by_period.setdefault(item.period, []).append(item)
@@ -109,13 +126,19 @@ def run_crossfoot_checks(line_items: List[ExtractedFinancialLineItem], threshold
     results = []
     for period, items in by_period.items():
         totals = [i for i in items if i.label and "total" in i.label.lower()]
-        non_totals = [i for i in items if i not in totals]
-        if not totals or not non_totals:
+        if not totals:
             continue
-        computed_sum = sum(i.value for i in non_totals if i.value is not None)
         for total_item in totals:
             if total_item.value is None:
                 continue
+            total_keywords = _label_keywords(total_item.label)
+            components = [
+                i for i in items
+                if i not in totals and i.value is not None and _label_keywords(i.label) & total_keywords
+            ]
+            if not components:
+                continue
+            computed_sum = sum(i.value for i in components)
             variance = relative_variance_pct(computed_sum, total_item.value)
             results.append(
                 {
@@ -123,7 +146,7 @@ def run_crossfoot_checks(line_items: List[ExtractedFinancialLineItem], threshold
                     "total_label": total_item.label,
                     "reported_total": total_item.value,
                     "computed_sum": round(computed_sum, 2),
-                    "component_labels": [i.label for i in non_totals],
+                    "component_labels": [i.label for i in components],
                     "variance_pct": round(variance, 2),
                     "flagged": variance > threshold_pct,
                 }

@@ -47,6 +47,16 @@ CORE_SECTIONS = [
 PRIORITY_RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
 
 
+def _is_stub_draft(content: Optional[str]) -> bool:
+    """True if this draft's content is drafting.py's GROQ_API_KEY-missing
+    placeholder rather than real (LLM-generated or promoter-edited) text.
+    Scoring functions below all need this: a stub has no
+    "[NEEDS PROMOTER INPUT" gap tags and no boilerplate phrases, so without
+    this check it silently scores as a clean, fully-drafted section instead
+    of the "nothing real generated yet" state it actually is."""
+    return bool(content) and content.strip().startswith("[STUB DRAFT")
+
+
 def _latest_drafts_by_section(db: Session, company_id: str) -> Dict[str, DraftSection]:
     all_drafts = (
         db.query(DraftSection)
@@ -136,6 +146,9 @@ def score_drafting(latest_drafts: Dict[str, DraftSection]) -> Dict:
         if not draft or not draft.content:
             notes.append(f"{section_name}: not drafted")
             continue
+        if _is_stub_draft(draft.content) and not draft.is_manual_edit:
+            notes.append(f"{section_name}: stub only (GROQ_API_KEY not set)")
+            continue
         gap_count = draft.content.upper().count("[NEEDS PROMOTER INPUT")
         section_score = max(0.0, per_section_max - min(per_section_max, gap_count * 2))
         total += section_score
@@ -174,6 +187,13 @@ def score_risk_audit(latest_drafts: Dict[str, DraftSection]) -> Dict:
     risk_draft = latest_drafts.get(RISK_FACTORS_SECTION_NAME)
     if not risk_draft or not risk_draft.content:
         return {"module": "Risk Audit", "score": 0, "max": MODULE_MAX, "note": "No Risk Factors draft yet."}
+    if _is_stub_draft(risk_draft.content) and not risk_draft.is_manual_edit:
+        return {
+            "module": "Risk Audit",
+            "score": 0,
+            "max": MODULE_MAX,
+            "note": "Risk Factors draft is a stub (GROQ_API_KEY not set) — nothing real to audit yet.",
+        }
 
     paragraphs = [p.strip() for p in risk_draft.content.split("\n\n") if p.strip()]
     if not paragraphs:
@@ -202,7 +222,10 @@ def score_handoff_readiness(
 
     financials_pts = 5 if has_financials else 0
 
-    drafted_pts = 5 * sum(1 for s in CORE_SECTIONS if s in latest_drafts) / len(CORE_SECTIONS)
+    drafted_pts = 5 * sum(
+        1 for s in CORE_SECTIONS
+        if s in latest_drafts and not (_is_stub_draft(latest_drafts[s].content) and not latest_drafts[s].is_manual_edit)
+    ) / len(CORE_SECTIONS)
 
     consistency_pts = 5 * consistency_score / MODULE_MAX
 

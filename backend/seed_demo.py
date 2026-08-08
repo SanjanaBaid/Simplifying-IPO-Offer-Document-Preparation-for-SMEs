@@ -69,20 +69,20 @@ INTAKE_ANSWERS = {
 }
 
 RISK_FACTORS_CONTENT = """**Supplier Concentration Risk**
-We depend on a single supplier, Bansal Steel Pvt Ltd, for 62% of our raw steel input. Any disruption to this supplier, such as a supply chain disruption or insolvency, would materially affect our production and have a significant impact on our business. This concentration of supply chain risk may adversely affect our ability to meet customer demand and maintain our sales volumes. [Sch. VI, Part A, Cl. 17(i)]
+We depend on a single supplier, Bansal Steel Pvt Ltd, for 62% of our raw steel input. Any disruption to this supplier, such as a supply chain disruption or insolvency, would materially affect our production and have a significant impact on our business. This concentration of supply chain risk may adversely affect our ability to meet customer demand and maintain our sales volumes. [Sch. VI, Part A, Cl. 5(B)]
 
 **Industry Cyclicality Risk**
-The industry is cyclical and our business is subject to general economic conditions and factors beyond our control. There can be no assurance that demand for our products will remain stable, and any downturn could adversely affect our business, results of operations, and financial condition. [Sch. VI, Part A, Cl. 17(ii)]"""
+The industry is cyclical and our business is subject to general economic conditions and factors beyond our control. There can be no assurance that demand for our products will remain stable, and any downturn could adversely affect our business, results of operations, and financial condition. [Sch. VI, Part A, Cl. 5(B)]"""
 
-RISK_FACTORS_CLAUSE = "Sch. VI, Part A, Cl. 17(i), Sch. VI, Part A, Cl. 17(ii)"
+RISK_FACTORS_CLAUSE = "Sch. VI, Part A, Cl. 5(B)"
 
-CAPITAL_STRUCTURE_CONTENT = """The Company's authorized share capital is ₹5,00,00,000 divided into equity shares of face value ₹10 each. [CAPITAL-STRUCTURE-1]
+CAPITAL_STRUCTURE_CONTENT = """The Company's authorized share capital is ₹5,00,00,000 divided into equity shares of face value ₹10 each. [Sch. VI, Part A, Cl. 8(A)]
 
-The Company's paid-up capital stood at ₹4,50,00,000 as of the last financial year, fully subscribed and called up. [CAPITAL-STRUCTURE-2]
+The Company's paid-up capital stood at ₹4,50,00,000 as of the last financial year, fully subscribed and called up. [Sch. VI, Part A, Cl. 8(A)]
 
-Promoter shareholding stood at 68.4% as of the date of this document. The promoter subscribed to shares at incorporation in 2014 and acquired further shares via a rights issue in 2019; 12,50,000 of the promoter's shares are eligible for the minimum promoter contribution lock-in. [Sch. VI, Part A, Cl. 11(ix)]"""
+Promoter shareholding stood at 68.4% as of the date of this document. The promoter subscribed to shares at incorporation in 2014 and acquired further shares via a rights issue in 2019; 12,50,000 of the promoter's shares are eligible for the minimum promoter contribution lock-in. [Sch. VI, Part A, Cl. 8(B)]"""
 
-CAPITAL_STRUCTURE_CLAUSE = "CAPITAL-STRUCTURE-1, CAPITAL-STRUCTURE-2, Sch. VI, Part A, Cl. 11(ix)"
+CAPITAL_STRUCTURE_CLAUSE = "Sch. VI, Part A, Cl. 8(A), Sch. VI, Part A, Cl. 8(B)"
 
 FINANCIAL_LINE_ITEMS = [
     {"label": "Authorized Capital", "value": 50000000, "period": DEMO_PERIOD},
