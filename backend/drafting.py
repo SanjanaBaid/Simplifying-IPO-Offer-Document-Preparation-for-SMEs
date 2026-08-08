@@ -524,11 +524,18 @@ class DraftGenerateOut(BaseModel):
     version: int
     content: str
     schedule_vi_clause: Optional[str] = None
+    is_manual_edit: bool = False
     retrieved_clauses: List[ClauseOut]
     missing_intake_fields: List[str]
 
     class Config:
         from_attributes = True
+
+
+class DraftEditIn(BaseModel):
+    company_id: str
+    section: SectionKey
+    content: str
 
 
 # ---------------------------------------------------------------------------
@@ -587,6 +594,7 @@ def list_latest_sections(
                 version=latest.version,
                 content=latest.content,
                 schedule_vi_clause=latest.schedule_vi_clause,
+                is_manual_edit=bool(latest.is_manual_edit),
                 retrieved_clauses=[],
                 missing_intake_fields=missing_fields,
             )
@@ -639,6 +647,7 @@ def generate_draft_section(
         content=draft_text,
         schedule_vi_clause=clause_citation,
         version=next_version,
+        is_manual_edit=False,
     )
     db.add(draft_row)
     db.commit()
@@ -652,6 +661,70 @@ def generate_draft_section(
         version=draft_row.version,
         content=draft_row.content,
         schedule_vi_clause=draft_row.schedule_vi_clause,
+        is_manual_edit=False,
         retrieved_clauses=clauses,
+        missing_intake_fields=missing_fields,
+    )
+
+
+@router.post("/edit", response_model=DraftGenerateOut)
+def edit_draft_section(
+    payload: DraftEditIn,
+    current: Promoter = Depends(get_current_promoter),
+    db: Session = Depends(get_db),
+):
+    """Save a promoter's hand-edited version of a section without calling the
+    LLM. A draft must already exist for the section (generate one first) —
+    editing saves a new version on top of it and carries forward its clause
+    citations, since rewording a paragraph doesn't change which Schedule VI
+    clauses it's meant to satisfy."""
+    company = db.query(Company).filter(Company.id == payload.company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Unknown company_id: {payload.company_id}")
+    if company.promoter_id != current.id:
+        raise HTTPException(status_code=403, detail="You don't have access to this company.")
+
+    if not payload.content or not payload.content.strip():
+        raise HTTPException(status_code=400, detail="Edited content cannot be empty.")
+
+    config = SECTION_CONFIG[payload.section]
+
+    latest = (
+        db.query(DraftSection)
+        .filter(DraftSection.company_id == company.id, DraftSection.section_name == config["display_name"])
+        .order_by(DraftSection.version.desc())
+        .first()
+    )
+    if not latest:
+        raise HTTPException(
+            status_code=404,
+            detail="No draft exists yet for this section — generate one before editing it.",
+        )
+
+    edited_row = DraftSection(
+        company_id=company.id,
+        section_name=config["display_name"],
+        content=payload.content,
+        schedule_vi_clause=latest.schedule_vi_clause,
+        version=latest.version + 1,
+        is_manual_edit=True,
+    )
+    db.add(edited_row)
+    db.commit()
+    db.refresh(edited_row)
+
+    intake_answers = _gather_intake_answers(db, company.id, config["intake_field_keys"])
+    missing_fields = [key for key, value in intake_answers.items() if not value or not value.strip()]
+
+    return DraftGenerateOut(
+        id=edited_row.id,
+        company_id=company.id,
+        section_key=payload.section,
+        section_name=edited_row.section_name,
+        version=edited_row.version,
+        content=edited_row.content,
+        schedule_vi_clause=edited_row.schedule_vi_clause,
+        is_manual_edit=True,
+        retrieved_clauses=[],
         missing_intake_fields=missing_fields,
     )

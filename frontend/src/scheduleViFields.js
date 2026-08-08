@@ -59,7 +59,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "company_legal_name",
-        clause_number: "Sch. VI, Part A, Cl. 1(a)",
+        clause_number: "Sch. VI, Part A, Cl. 7(A)",
         plain_language_prompt: "What is the full legal name of the company, exactly as registered?",
         field_type: "text",
         placeholder: "e.g. Aravalli Precision Components Limited",
@@ -67,7 +67,7 @@ export const SECTIONS = [
       },
       {
         field_key: "cin",
-        clause_number: "Sch. VI, Part A, Cl. 1(b)",
+        clause_number: "Sch. VI, Part A, Cl. 7(A)",
         plain_language_prompt: "What is the company's Corporate Identity Number (CIN)?",
         field_type: "text",
         placeholder: "e.g. U29253MH2014PLC256321",
@@ -79,7 +79,7 @@ export const SECTIONS = [
       },
       {
         field_key: "registered_office_address",
-        clause_number: "Sch. VI, Part A, Cl. 1(c)",
+        clause_number: "Sch. VI, Part A, Cl. 7(A)",
         plain_language_prompt: "What is the company's registered office address?",
         field_type: "textarea",
         placeholder: "Building, street, city, state, PIN code",
@@ -87,14 +87,14 @@ export const SECTIONS = [
       },
       {
         field_key: "date_of_incorporation",
-        clause_number: "Sch. VI, Part A, Cl. 1(d)",
+        clause_number: "Sch. VI, Part A, Cl. 1(a)",
         plain_language_prompt: "When was the company incorporated?",
         field_type: "date",
         validate: compose(required("Date of incorporation"), pastDate),
       },
       {
         field_key: "promoter_full_name",
-        clause_number: "Sch. VI, Part A, Cl. 2(a)",
+        clause_number: "Sch. VI, Part A, Cl. 4(B)",
         plain_language_prompt: "What is the promoter's full name, as it appears on their PAN card?",
         field_type: "text",
         placeholder: "e.g. Rakesh Vinod Deshmukh",
@@ -102,7 +102,7 @@ export const SECTIONS = [
       },
       {
         field_key: "promoter_pan",
-        clause_number: "Sch. VI, Part A, Cl. 2(b)",
+        clause_number: "Sch. VI, Part A, Cl. 7(A)",
         plain_language_prompt: "What is the promoter's PAN?",
         field_type: "text",
         placeholder: "e.g. ABCDE1234F",
@@ -113,7 +113,7 @@ export const SECTIONS = [
       },
       {
         field_key: "promoter_din",
-        clause_number: "Sch. VI, Part A, Cl. 2(c)",
+        clause_number: "Sch. VI, Part A, Cl. 7(B)",
         plain_language_prompt: "If the promoter is also a director, what is their DIN? (Leave blank if not applicable.)",
         field_type: "text",
         placeholder: "e.g. 01234567",
@@ -129,7 +129,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "nature_of_business",
-        clause_number: "Sch. VI, Part A, Cl. 6(iii)",
+        clause_number: "Sch. VI, Part A, Cl. 4(A)",
         plain_language_prompt: "In plain terms, what does the company do and who are its customers?",
         field_type: "textarea",
         placeholder: "Describe the business as you'd explain it to a new employee.",
@@ -137,21 +137,21 @@ export const SECTIONS = [
       },
       {
         field_key: "key_products_services",
-        clause_number: "Sch. VI, Part A, Cl. 6(iv)",
+        clause_number: "Sch. VI, Part A, Cl. 4(A)",
         plain_language_prompt: "What are the company's main products or services?",
         field_type: "textarea",
         validate: compose(required("Key products/services"), minLength(20)),
       },
       {
         field_key: "manufacturing_locations",
-        clause_number: "Sch. VI, Part A, Cl. 6(v)",
+        clause_number: "Sch. VI, Part A, Cl. 4(A)",
         plain_language_prompt: "Where are the company's manufacturing units or main places of operation?",
         field_type: "textarea",
         validate: compose(required("Manufacturing / operating locations")),
       },
       {
         field_key: "employee_count",
-        clause_number: "Sch. VI, Part A, Cl. 6(vii)",
+        clause_number: "Sch. VI, Part A, Cl. 4(A)",
         plain_language_prompt: "How many people does the company currently employ?",
         field_type: "number",
         placeholder: "e.g. 142",
@@ -166,7 +166,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "issue_size_cr",
-        clause_number: "Reg. 229, Sch. VI Cl. 9(i)",
+        clause_number: "Sch. VI, Part A, Cl. 8(A)",
         plain_language_prompt: "What is the proposed issue size, in ₹ crore?",
         field_type: "number",
         placeholder: "e.g. 42.5",
@@ -174,7 +174,7 @@ export const SECTIONS = [
       },
       {
         field_key: "objects_of_issue",
-        clause_number: "Reg. 229, Sch. VI Cl. 9(ii)",
+        clause_number: "Reg. 229, Sch. VI Cl. 9(A)",
         plain_language_prompt: "What will the company use the raised money for?",
         field_type: "textarea",
         placeholder: "e.g. Funding working capital, repaying a specific loan, setting up a new unit...",
@@ -182,7 +182,7 @@ export const SECTIONS = [
       },
       {
         field_key: "proposed_utilization_schedule",
-        clause_number: "Reg. 229, Sch. VI Cl. 9(iii)",
+        clause_number: "Reg. 229, Sch. VI Cl. 9(A)",
         plain_language_prompt: "Roughly when do you expect to deploy the funds — a rough year-wise or milestone-wise breakdown is fine.",
         field_type: "textarea",
         validate: compose(required("Utilization schedule")),
@@ -196,7 +196,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "current_shareholding_pct",
-        clause_number: "Sch. VI, Part A, Cl. 11(ix)",
+        clause_number: "Sch. VI, Part A, Cl. 8(B)",
         plain_language_prompt: "What percentage of the company does the promoter currently hold?",
         field_type: "number",
         placeholder: "e.g. 68.4",
@@ -204,14 +204,14 @@ export const SECTIONS = [
       },
       {
         field_key: "shareholding_acquisition_history",
-        clause_number: "Sch. VI, Part A, Cl. 11(x)",
+        clause_number: "Sch. VI, Part A, Cl. 8(B)",
         plain_language_prompt: "How did the promoter acquire these shares — original allotment, purchase, transfer, bonus, etc.? A brief timeline is fine.",
         field_type: "textarea",
         validate: compose(required("Shareholding acquisition history"), minLength(30)),
       },
       {
         field_key: "lock_in_eligible_shares",
-        clause_number: "Sch. VI, Part A, Cl. 11(xi)",
+        clause_number: "Sch. VI, Part A, Cl. 8(B)",
         plain_language_prompt: "How many of the promoter's shares are eligible for the minimum promoter contribution lock-in?",
         field_type: "number",
         placeholder: "e.g. 1250000",
@@ -226,7 +226,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "related_party_relationship",
-        clause_number: "Sch. VI, Part A, Cl. 14(i)",
+        clause_number: "Sch. VI, Part A, Cl. 4(K)",
         plain_language_prompt: "Does the company have any related party relationships to disclose?",
         field_type: "select",
         options: [
@@ -241,7 +241,7 @@ export const SECTIONS = [
       },
       {
         field_key: "related_party_transactions",
-        clause_number: "Sch. VI, Part A, Cl. 14(ii)",
+        clause_number: "Sch. VI, Part A, Cl. 4(K)",
         plain_language_prompt: "Describe any transactions with related parties over the last 3 years (amounts, nature, parties involved). Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Related party transactions")),
@@ -255,21 +255,21 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "operational_risks",
-        clause_number: "Sch. VI, Part A, Cl. 17(i)",
+        clause_number: "Sch. VI, Part A, Cl. 5(B)",
         plain_language_prompt: "What operational risks worry you most (supply chain, key customers, key personnel, etc.)?",
         field_type: "textarea",
         validate: compose(required("Operational risks"), minLength(30)),
       },
       {
         field_key: "industry_risks",
-        clause_number: "Sch. VI, Part A, Cl. 17(ii)",
+        clause_number: "Sch. VI, Part A, Cl. 5(B)",
         plain_language_prompt: "What industry-wide or regulatory risks could affect the business?",
         field_type: "textarea",
         validate: compose(required("Industry risks"), minLength(30)),
       },
       {
         field_key: "litigation_disclosure",
-        clause_number: "Sch. VI, Part A, Cl. 17(iii)",
+        clause_number: "Sch. VI, Part A, Cl. 5(G)",
         plain_language_prompt: "Is the company, or any promoter/director, currently party to any litigation? Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Litigation disclosure")),
@@ -283,7 +283,7 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "board_composition",
-        clause_number: "Sch. VI, Part A, Cl. 4(i)",
+        clause_number: "Sch. VI, Part A, Cl. 7(B)",
         plain_language_prompt: "Who are the company's directors? List each director's name, designation, and whether they are a promoter.",
         field_type: "textarea",
         placeholder: "e.g. Rakesh Deshmukh — Managing Director (Promoter); Anjali Rao — Independent Director",
@@ -291,21 +291,21 @@ export const SECTIONS = [
       },
       {
         field_key: "key_managerial_personnel",
-        clause_number: "Sch. VI, Part A, Cl. 4(ii)",
+        clause_number: "Sch. VI, Part A, Cl. 7(C)",
         plain_language_prompt: "Who are the company's key managerial personnel (CFO, Company Secretary, other senior leadership)? Include designation and relevant experience.",
         field_type: "textarea",
         validate: compose(required("Key managerial personnel"), minLength(20)),
       },
       {
         field_key: "director_relationships",
-        clause_number: "Sch. VI, Part A, Cl. 4(iii)",
+        clause_number: "Sch. VI, Part A, Cl. 7(B)",
         plain_language_prompt: "Are any directors related to each other or to the promoter (spouse, sibling, parent-child, etc.)? Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Director relationships")),
       },
       {
         field_key: "management_changes_last_3_years",
-        clause_number: "Sch. VI, Part A, Cl. 4(iv)",
+        clause_number: "Sch. VI, Part A, Cl. 7(B)",
         plain_language_prompt: "Have there been any changes to the board or key managerial personnel in the last 3 years? Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Management changes")),
@@ -319,28 +319,28 @@ export const SECTIONS = [
     fields: [
       {
         field_key: "material_licenses_approvals",
-        clause_number: "Sch. VI, Part A, Cl. 15(i)",
+        clause_number: "Sch. VI, Part A, Cl. 5(G)",
         plain_language_prompt: "What material licenses, registrations, or approvals does the company hold to run its business (e.g. GST registration, factory license, industry-specific permits)?",
         field_type: "textarea",
         validate: compose(required("Material licenses & approvals"), minLength(20)),
       },
       {
         field_key: "pending_regulatory_approvals",
-        clause_number: "Sch. VI, Part A, Cl. 15(ii)",
+        clause_number: "Sch. VI, Part A, Cl. 5(G)",
         plain_language_prompt: "Are there any licenses or approvals the company has applied for but not yet received? Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Pending regulatory approvals")),
       },
       {
         field_key: "outstanding_borrowings",
-        clause_number: "Sch. VI, Part A, Cl. 16(i)",
+        clause_number: "Sch. VI, Part A, Cl. 4(F)",
         plain_language_prompt: "What are the company's outstanding borrowings — lender name, amount, and security offered (if any)? Write \"None\" if the company has no borrowings.",
         field_type: "textarea",
         validate: compose(required("Outstanding borrowings")),
       },
       {
         field_key: "contingent_liabilities",
-        clause_number: "Sch. VI, Part A, Cl. 16(ii)",
+        clause_number: "Sch. VI, Part A, Cl. 4(J)",
         plain_language_prompt: "Does the company have any contingent liabilities — guarantees given, disputed tax demands, unacknowledged claims? Write \"None\" if not applicable.",
         field_type: "textarea",
         validate: compose(required("Contingent liabilities")),

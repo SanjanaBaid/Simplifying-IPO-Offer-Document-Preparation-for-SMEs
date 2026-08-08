@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     JSON,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 
@@ -123,6 +124,11 @@ class DraftSection(Base):
     content = Column(Text, nullable=True)
     schedule_vi_clause = Column(String, nullable=True)
     version = Column(Integer, default=1)
+    # True when this version was hand-edited by the promoter rather than
+    # produced by generate_draft_section's LLM call. Lets the frontend show
+    # "edited by you" instead of implying every version is AI-authored, and
+    # gives the merchant-banker handoff a real human-in-the-loop signal.
+    is_manual_edit = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     company = relationship("Company", back_populates="draft_sections")

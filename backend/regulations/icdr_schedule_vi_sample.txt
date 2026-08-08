@@ -1,151 +1,85 @@
+Source: SEBI (Issue of Capital and Disclosure Requirements) Regulations, 2018,
+Schedule VI Part A — "Disclosures in offer document/letter of offer"
+[See Regulations 17, 24(2)(b), 57(1)(f), 70(2), 122(2)(ii), 175(1)(f), 239,
+246(2)(b), 282(1)(f), 287(2), 291], cross-checked against a merchant banker's
+regulation-wise compliance checklist for an SME IPO. Clause text below is
+paraphrased, not quoted verbatim, and grouped by the real Part A item
+numbering — this is a working subset covering the disclosure areas this
+project currently drafts, not the full Schedule VI.
+
 [CLAUSE 1(a)]
-The offer document shall state the full legal name of the issuer company exactly as it
-appears on the certificate of incorporation, together with its Corporate Identity Number.
+Front cover pages of the offer document shall state the name of the issuer,
+its logo, the date and place of its incorporation, its corporate identity
+number, and the address of its registered and corporate offices.
 
-[CLAUSE 1(b)]
-The offer document shall disclose the Corporate Identity Number (CIN) of the issuer as
-allotted by the Registrar of Companies, and shall confirm it matches the incorporation
-certificate on record.
+[CLAUSE 4(A)]
+The Offer Document Summary shall state, in not more than 100 words, the
+primary business of the issuer and the industry in which it operates.
 
-[CLAUSE 1(c)]
-The offer document shall state the registered office address of the issuer, and shall note
-any change of registered office in the preceding three years along with reasons therefor.
+[CLAUSE 4(B)]
+The Offer Document Summary shall state the names of the promoter(s) of the
+issuer.
 
-[CLAUSE 1(d)]
-The offer document shall state the date and place of incorporation of the issuer, and the
-date on which it was converted, if applicable, from one class of company to another.
+[CLAUSE 4(F)]
+The Offer Document Summary shall include, from the restated financial
+statements for the past three years and stub period, a tabular summary
+covering share capital, net worth, revenue, profit after tax, earnings per
+share, net asset value per equity share, and total borrowings as per the
+balance sheet.
 
-[CLAUSE 2(a)]
-The offer document shall disclose the full name of each promoter, exactly as it appears on
-their Permanent Account Number, and their relationship (if any) to other promoters.
+[CLAUSE 4(J)]
+The Offer Document Summary shall include a summary table of contingent
+liabilities, cross-referenced to the contingent liabilities disclosed in the
+issuer's restated financial statements.
 
-[CLAUSE 2(b)]
-The offer document shall disclose the Permanent Account Number (PAN) of each promoter.
+[CLAUSE 4(K)]
+The Offer Document Summary shall include a summary of related party
+transactions for the preceding three years, cross-referenced to the related
+party transactions disclosed in the issuer's restated financial statements.
 
-[CLAUSE 2(c)]
-Where a promoter also holds a directorship, the offer document shall disclose the
-Director Identification Number (DIN) of such promoter-director.
+[CLAUSE 5(B)]
+Risk factors shall be classified into those which are specific to the
+project and internal to the issuer, and those which are external to the
+issuer and beyond its control.
 
-[CLAUSE 6(iii)]
-The offer document shall describe the nature of the issuer's business in plain terms,
-including the principal business activity and the class of customers served.
+[CLAUSE 5(G)]
+Risk factors shall necessarily disclose, wherever applicable: material
+statutory clearances and approvals yet to be received by the issuer; a
+summary of all outstanding litigation and other material matters, in
+tabular form with amounts involved where quantifiable, separately
+highlighting any criminal, regulatory, or taxation matters that could have
+a material adverse effect on the issuer; and dependence of the issuer on a
+single customer or a small number of customers where loss of that
+relationship could have a material adverse effect.
 
-[CLAUSE 6(iv)]
-The offer document shall list the issuer's key products or services, and the proportion of
-revenue each contributes where such information is available.
+[CLAUSE 7(A)]
+The General Information section shall state the name and address of the
+issuer's registered and corporate offices, its registration number, and the
+address of the Registrar of Companies where the issuer is registered.
 
-[CLAUSE 6(v)]
-The offer document shall disclose the location of each manufacturing unit or principal
-place of operation of the issuer.
+[CLAUSE 7(B)]
+The General Information section shall state the name, designation, address,
+and Director Identification Number (DIN) of each member of the issuer's
+board of directors.
 
-[CLAUSE 6(vii)]
-The offer document shall disclose the total number of employees of the issuer as on the
-date of the offer document.
+[CLAUSE 7(C)]
+The General Information section shall state the names, addresses, telephone
+numbers, and e-mail addresses of the Company Secretary, legal advisor, and
+bankers to the issuer.
 
-[CLAUSE 9(i)]
-The offer document shall state the total proposed issue size, expressed in rupees crore,
-distinguishing between fresh issue and offer for sale components, if any.
+[CLAUSE 8(A)]
+The Capital Structure section shall state, in tabular form, the authorised,
+issued, subscribed, and paid-up capital of the issuer, and the size of the
+present issue including any promoters' contribution and net offer amount.
 
-[CLAUSE 9(ii)]
-The offer document shall set out the objects of the issue, describing each specific purpose
-for which the net proceeds are intended to be utilised.
+[CLAUSE 8(B)]
+The Capital Structure section shall include the total shareholding of each
+promoter in tabular form — nature of issue, date of allotment or transfer,
+number of shares, face value, issue price, and percentage of pre- and
+post-issue capital — together with details of promoters' contribution and
+the lock-in period applicable to each promoter's holding.
 
-[CLAUSE 9(iii)]
-The offer document shall provide a schedule of utilisation of issue proceeds, indicating the
-year-wise or milestone-wise deployment of funds for each stated object.
-
-[CLAUSE 11(ix)]
-The offer document shall state the percentage shareholding of the promoter(s) in the
-issuer, both pre-issue and post-issue.
-
-[CLAUSE 11(x)]
-The offer document shall disclose the history of the promoter's acquisition of shares in the
-issuer, including the mode of acquisition (subscription at incorporation, transfer, rights
-issue, bonus issue, or otherwise) and the relevant dates.
-
-[CLAUSE 11(xi)]
-The offer document shall state the number of equity shares held by the promoter that are
-eligible for and subject to the minimum promoter contribution lock-in requirement.
-
-[CLAUSE 14(i)]
-The offer document shall disclose whether the issuer has any related party relationships,
-including subsidiaries, associate companies, or promoter group entities.
-
-[CLAUSE 14(ii)]
-The offer document shall describe all related party transactions entered into by the issuer
-during the three financial years preceding the offer document, including the nature,
-amount, and parties involved in each transaction.
-
-[CLAUSE 17(i)]
-The offer document shall disclose all material operational risks specific to the issuer,
-including risks relating to supply chain concentration, dependence on key customers, or
-dependence on key managerial personnel, quantified where the issuer is able to do so.
-
-[CLAUSE 17(ii)]
-The offer document shall disclose material industry-wide or regulatory risks that could
-affect the issuer's business, avoiding generic industry commentary in favour of risks
-specific to the issuer's sector and operations.
-
-[CLAUSE 17(iii)]
-The offer document shall disclose all material litigation, regulatory action, or disciplinary
-proceedings involving the issuer, its promoters, or its directors, or shall affirmatively state
-that no such proceedings exist.
-
-[CLAUSE REG229(4)]
-For SME issuers under Chapter IX of these Regulations, the offer document shall disclose
-material outstanding litigation involving the issuer, its promoters, its directors, or its group
-companies, and shall not omit litigation on the ground of immateriality without stating the
-basis for that assessment.
-
-[CLAUSE CAPITAL-STRUCTURE-1]
-The offer document shall state the authorised share capital of the issuer as at the date of
-the offer document, and the number and face value of shares comprising it.
-
-[CLAUSE CAPITAL-STRUCTURE-2]
-The offer document shall state the issued, subscribed, and paid-up share capital of the
-issuer, and shall reconcile any difference between authorised and paid-up capital.
-
-[CLAUSE CAPITAL-STRUCTURE-3]
-The offer document shall present the build-up of the issuer's share capital in tabular form,
-showing the date of allotment, number of shares allotted, face value, issue price, and
-nature of consideration for each allotment since incorporation.
-
-[CLAUSE 4(i)]
-The offer document shall disclose the composition of the board of directors, stating for
-each director their name, designation, and whether they are a promoter, executive, or
-independent director.
-
-[CLAUSE 4(ii)]
-The offer document shall disclose the issuer's key managerial personnel, including the
-chief financial officer and company secretary, together with their designation and
-relevant experience.
-
-[CLAUSE 4(iii)]
-The offer document shall disclose any relationship, by blood or marriage, between any two
-directors or between a director and a promoter of the issuer, or shall affirmatively state
-that no such relationship exists.
-
-[CLAUSE 4(iv)]
-The offer document shall disclose any change in the composition of the board of directors
-or key managerial personnel during the three years preceding the offer document, stating
-the nature of and reason for each change.
-
-[CLAUSE 15(i)]
-The offer document shall list all material licenses, registrations, and statutory approvals
-held by the issuer that are necessary to carry on its business, together with their validity
-period where applicable.
-
-[CLAUSE 15(ii)]
-The offer document shall disclose any material license, registration, or approval applied
-for by the issuer that remains pending as at the date of the offer document, or shall
-affirmatively state that none is pending.
-
-[CLAUSE 16(i)]
-The offer document shall disclose the issuer's outstanding borrowings as at the date of the
-offer document, including the name of each lender, the amount outstanding, and the
-security (if any) offered against each borrowing.
-
-[CLAUSE 16(ii)]
-The offer document shall disclose all material contingent liabilities of the issuer,
-including guarantees given on behalf of third parties and disputed tax demands or claims
-not acknowledged as debt, or shall affirmatively state that none exist.
+[CLAUSE 9(A)]
+The Particulars of the Issue section shall set out the objects of the issue
+and, where relevant, a schedule for utilisation of the issue proceeds
+including the basis of estimation and reasons for the funding requirement.

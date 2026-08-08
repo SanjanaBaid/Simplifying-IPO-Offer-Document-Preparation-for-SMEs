@@ -24,6 +24,10 @@ export default function Drafting() {
   const [classifying, setClassifying] = useState(false);
   const [classifyError, setClassifyError] = useState("");
   const [loadingExisting, setLoadingExisting] = useState(true);
+  const [editingSectionKey, setEditingSectionKey] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
 
   // Reload whatever's already been generated/classified for this company —
   // otherwise this page renders blank on every remount (e.g. navigating to
@@ -76,6 +80,9 @@ export default function Drafting() {
 
     setGenerating(section.key);
     setErrorMsg("");
+    if (editingSectionKey === section.key) {
+      cancelEditing();
+    }
     try {
       const { data } = await apiClient.post("/drafting/generate", {
         company_id: companyId,
@@ -92,6 +99,43 @@ export default function Drafting() {
       );
     } finally {
       setGenerating(null);
+    }
+  }
+
+  function startEditing(section, draft) {
+    setEditingSectionKey(section.key);
+    setEditText(draft.content);
+    setEditError("");
+  }
+
+  function cancelEditing() {
+    setEditingSectionKey(null);
+    setEditText("");
+    setEditError("");
+  }
+
+  async function handleSaveEdit(section) {
+    if (!editText || !editText.trim()) {
+      setEditError("Edited content can't be empty.");
+      return;
+    }
+    setSavingEdit(true);
+    setEditError("");
+    try {
+      const { data } = await apiClient.post("/drafting/edit", {
+        company_id: companyId,
+        section: section.key,
+        content: editText,
+      });
+      setDrafts((prev) => ({ ...prev, [section.key]: data }));
+      setEditingSectionKey(null);
+      setEditText("");
+    } catch (err) {
+      setEditError(
+        err.response?.data?.detail || "Couldn't save your edit — try again."
+      );
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -131,11 +175,14 @@ export default function Drafting() {
           const draft = drafts[section.key];
           const isGenerating = generating === section.key;
           const hasGaps = draft?.missing_intake_fields?.length > 0;
+          const isEditing = editingSectionKey === section.key;
 
           return (
             <div className="mock-card" key={section.key}>
               <span className={`status ${draft ? (hasGaps ? "flag" : "clear") : "pending"}`}>
-                {draft ? `Drafted · v${draft.version}` : "Not drafted yet"}
+                {draft
+                  ? `Drafted · v${draft.version}${draft.is_manual_edit ? " · edited by you" : ""}`
+                  : "Not drafted yet"}
               </span>
               <h3>{section.label}</h3>
 
@@ -144,15 +191,47 @@ export default function Drafting() {
                   {draft.schedule_vi_clause && (
                     <p className="clause-tag">{draft.schedule_vi_clause}</p>
                   )}
-                  <p style={{ whiteSpace: "pre-wrap" }}>{renderInlineMarkdown(draft.content)}</p>
 
-                  {hasGaps && (
+                  {isEditing ? (
+                    <>
+                      <textarea
+                        className="intake-input"
+                        style={{ width: "100%", minHeight: "180px", fontFamily: "inherit" }}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        disabled={savingEdit}
+                      />
+                      {editError && <p className="field-error">{editError}</p>}
+                      <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem" }}>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={() => handleSaveEdit(section)}
+                          disabled={savingEdit}
+                        >
+                          {savingEdit ? "Saving…" : "Save edit"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          onClick={cancelEditing}
+                          disabled={savingEdit}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ whiteSpace: "pre-wrap" }}>{renderInlineMarkdown(draft.content)}</p>
+                  )}
+
+                  {hasGaps && !isEditing && (
                     <p className="field-error">
                       Needs promoter input: {draft.missing_intake_fields.join(", ")}
                     </p>
                   )}
 
-                  {draft.retrieved_clauses?.length > 0 && (
+                  {draft.retrieved_clauses?.length > 0 && !isEditing && (
                     <details>
                       <summary style={{ cursor: "pointer" }}>
                         {draft.retrieved_clauses.length} clause
@@ -169,7 +248,7 @@ export default function Drafting() {
                     </details>
                   )}
 
-                  {section.key === "risk_factors" && (
+                  {section.key === "risk_factors" && !isEditing && (
                     <div style={{ marginTop: "0.75rem" }}>
                       <button
                         type="button"
@@ -229,18 +308,32 @@ export default function Drafting() {
                 <p>Not generated yet — complete Guided Intake first, then generate.</p>
               )}
 
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => handleGenerate(section)}
-                disabled={isGenerating}
-              >
-                {isGenerating
-                  ? "Generating…"
-                  : draft
-                  ? `Regenerate ${section.label}`
-                  : `Generate ${section.label}`}
-              </button>
+              {!isEditing && (
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => handleGenerate(section)}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating
+                      ? "Generating…"
+                      : draft
+                      ? `Regenerate ${section.label}`
+                      : `Generate ${section.label}`}
+                  </button>
+                  {draft && (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => startEditing(section, draft)}
+                      disabled={isGenerating}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
